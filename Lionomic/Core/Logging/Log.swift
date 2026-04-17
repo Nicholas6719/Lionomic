@@ -1,5 +1,5 @@
 import Foundation
-import os
+@_exported import os
 
 enum Log {
     static let subsystem = Bundle.main.bundleIdentifier ?? "Coppola.Lionomic"

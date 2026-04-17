@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct RootView: View {
     var body: some View {
@@ -14,6 +15,8 @@ struct RootView: View {
 }
 
 #Preview {
+    let container = try! ModelContainerFactory.makeSharedContainer(isStoredInMemoryOnly: true)
     RootView()
-        .environment(AppEnvironment())
+        .environment(AppEnvironment(modelContainer: container))
+        .modelContainer(container)
 }
