@@ -8,6 +8,9 @@ import SwiftData
 ///   - Locks on background, auto-triggers auth on foreground return
 ///   - Settings toolbar button
 ///
+/// M3 additions:
+///   - OnboardingView shown until preferences.firstLaunchComplete flips true
+///
 /// The placeholder content is replaced in M6 with the tab bar.
 struct RootView: View {
 
@@ -17,15 +20,25 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                Text("Lionomic")
-                    .font(.largeTitle.weight(.semibold))
-                Text("Private, local-first investing guidance")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+            Group {
+                if env.preferencesRepository.currentPreferences?.firstLaunchComplete == true {
+                    // M0 placeholder — replaced in M6 with tab bar
+                    VStack(spacing: 12) {
+                        Text("Lionomic")
+                            .font(.largeTitle.weight(.bold))
+                        Text("Your private investing guide.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if env.preferencesRepository.currentPreferences != nil {
+                    // Preferences loaded but onboarding not complete — show onboarding
+                    OnboardingView()
+                } else {
+                    // Preferences not yet loaded — blank screen briefly while seeding runs
+                    Color.clear
+                }
             }
-            .padding()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

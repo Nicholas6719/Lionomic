@@ -7,7 +7,12 @@ struct DraftAccount: Hashable {
     var displayName: String
     var notes: String
 
-    init(id: UUID? = nil, kind: AccountKind, displayName: String, notes: String = "") {
+    init(
+        id: UUID? = nil,
+        kind: AccountKind = .brokerage,
+        displayName: String = "",
+        notes: String = ""
+    ) {
         self.id = id
         self.kind = kind
         self.displayName = displayName
@@ -35,8 +40,8 @@ struct DraftHolding: Hashable {
     init(
         id: UUID? = nil,
         accountId: UUID,
-        symbol: String,
-        assetType: AssetType,
+        symbol: String = "",
+        assetType: AssetType = .stock,
         shares: Decimal? = nil,
         averageCost: Decimal? = nil,
         manualValuation: Decimal? = nil,

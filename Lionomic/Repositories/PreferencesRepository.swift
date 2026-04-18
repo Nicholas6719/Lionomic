@@ -80,6 +80,15 @@ final class PreferencesRepository {
         }
     }
 
+    /// Flips the `firstLaunchComplete` flag after onboarding is confirmed.
+    /// Not user data; not routed through draft/review. Loads the record if needed.
+    func markFirstLaunchComplete() throws {
+        if currentPreferences == nil { try load() }
+        currentPreferences?.firstLaunchComplete = true
+        currentPreferences?.updatedAt = Date()
+        try context.save()
+    }
+
     /// Applies a reviewed draft. Only call after user confirmation.
     func commit(draft: DraftPreferences) throws {
         let prefs: AppPreferences

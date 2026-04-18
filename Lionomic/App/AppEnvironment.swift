@@ -9,6 +9,7 @@ final class AppEnvironment {
     let portfolioRepository: PortfolioRepository
     let watchlistRepository: WatchlistRepository
     let preferencesRepository: PreferencesRepository
+    let historyService: HistoryService
     let keychainService = KeychainService()
     let biometricService = BiometricService()
 
@@ -19,6 +20,7 @@ final class AppEnvironment {
         self.portfolioRepository = PortfolioRepository(modelContext: context)
         self.watchlistRepository = WatchlistRepository(modelContext: context)
         self.preferencesRepository = PreferencesRepository(context: context)
+        self.historyService = HistoryService(context: context)
     }
 
     func seedOnFirstLaunch() {

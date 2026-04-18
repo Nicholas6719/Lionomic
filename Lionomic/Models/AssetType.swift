@@ -10,4 +10,14 @@ enum AssetType: String, Codable, CaseIterable, Hashable, Sendable {
     var usesMarketQuote: Bool {
         self != .nft
     }
+
+    var displayName: String {
+        switch self {
+        case .stock:      return "Stock"
+        case .etf:        return "ETF"
+        case .indexFund:  return "Index Fund"
+        case .mutualFund: return "Mutual Fund"
+        case .nft:        return "NFT"
+        }
+    }
 }

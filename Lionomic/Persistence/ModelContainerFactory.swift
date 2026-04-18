@@ -9,6 +9,9 @@ enum ModelContainerFactory {
         Holding.self,
         Watchlist.self,
         WatchlistItem.self,
+        ContributionEvent.self,
+        HoldingSnapshot.self,
+        AccountSnapshot.self,
     ]
 
     static func makeSharedContainer(
