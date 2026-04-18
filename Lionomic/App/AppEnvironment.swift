@@ -8,6 +8,9 @@ final class AppEnvironment {
     let profileRepository: ProfileRepository
     let portfolioRepository: PortfolioRepository
     let watchlistRepository: WatchlistRepository
+    let preferencesRepository: PreferencesRepository
+    let keychainService = KeychainService()
+    let biometricService = BiometricService()
 
     init(modelContainer: ModelContainer) {
         self.modelContainer = modelContainer
@@ -15,6 +18,7 @@ final class AppEnvironment {
         self.profileRepository = ProfileRepository(modelContext: context)
         self.portfolioRepository = PortfolioRepository(modelContext: context)
         self.watchlistRepository = WatchlistRepository(modelContext: context)
+        self.preferencesRepository = PreferencesRepository(context: context)
     }
 
     func seedOnFirstLaunch() {
@@ -22,6 +26,11 @@ final class AppEnvironment {
             try watchlistRepository.seedDefaultsIfNeeded()
         } catch {
             Log.persistence.error("Failed to seed default watchlists: \(String(describing: error), privacy: .public)")
+        }
+        do {
+            try preferencesRepository.load()
+        } catch {
+            Log.persistence.error("Failed to load app preferences: \(String(describing: error), privacy: .public)")
         }
     }
 }
