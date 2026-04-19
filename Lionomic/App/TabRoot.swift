@@ -17,7 +17,7 @@ struct TabRoot: View {
             NavigationStack { WatchlistListView() }
                 .tabItem { Label("Watchlists", systemImage: "eye.fill") }
 
-            NavigationStack { InsightsPlaceholderView() }
+            NavigationStack { RecommendationsListView() }
                 .tabItem { Label("Insights", systemImage: "lightbulb.fill") }
 
             NavigationStack { SettingsView() }

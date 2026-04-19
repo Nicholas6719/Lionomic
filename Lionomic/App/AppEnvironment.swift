@@ -11,6 +11,7 @@ final class AppEnvironment {
     let preferencesRepository: PreferencesRepository
     let historyService: HistoryService
     let marketDataService: MarketDataService
+    let recommendationService: RecommendationService
     let keychainService = KeychainService()
     let biometricService = BiometricService()
 
@@ -25,6 +26,11 @@ final class AppEnvironment {
         self.marketDataService = MarketDataService(
             modelContainer: modelContainer,
             keychain: keychainService
+        )
+        self.recommendationService = RecommendationService(
+            modelContext: context,
+            marketDataService: self.marketDataService,
+            profileRepository: self.profileRepository
         )
     }
 
@@ -60,6 +66,7 @@ final class AppEnvironment {
         wipe(HoldingSnapshot.self,   in: context)
         wipe(AccountSnapshot.self,   in: context)
         wipe(CachedQuote.self,       in: context)
+        wipe(Recommendation.self,    in: context)
 
         preferencesRepository.currentPreferences?.firstLaunchComplete = false
         preferencesRepository.currentPreferences?.updatedAt = Date()
