@@ -39,7 +39,7 @@ struct PortfolioRepositoryTests {
         let account = try makeAccount(repo)
 
         let holding = try repo.commit(draftHolding: DraftHolding(
-            accountId: account.id,
+            accountID: account.id,
             symbol: "aapl",
             assetType: .stock,
             shares: 10,
@@ -57,7 +57,7 @@ struct PortfolioRepositoryTests {
         let account = try makeAccount(repo)
 
         let first = try repo.commit(draftHolding: DraftHolding(
-            accountId: account.id,
+            accountID: account.id,
             symbol: "VTI",
             assetType: .etf,
             shares: 5,
@@ -66,7 +66,7 @@ struct PortfolioRepositoryTests {
 
         #expect(throws: PortfolioRepositoryError.self) {
             _ = try repo.commit(draftHolding: DraftHolding(
-                accountId: account.id,
+                accountID: account.id,
                 symbol: "vti",
                 assetType: .etf,
                 shares: 1,
@@ -76,7 +76,7 @@ struct PortfolioRepositoryTests {
 
         do {
             _ = try repo.commit(draftHolding: DraftHolding(
-                accountId: account.id,
+                accountID: account.id,
                 symbol: "VTI",
                 assetType: .etf,
                 shares: 1,
@@ -94,10 +94,10 @@ struct PortfolioRepositoryTests {
         let brokerage = try makeAccount(repo, kind: .brokerage)
 
         _ = try repo.commit(draftHolding: DraftHolding(
-            accountId: roth.id, symbol: "VOO", assetType: .etf, shares: 1, averageCost: 400
+            accountID: roth.id, symbol: "VOO", assetType: .etf, shares: 1, averageCost: 400
         ))
         _ = try repo.commit(draftHolding: DraftHolding(
-            accountId: brokerage.id, symbol: "VOO", assetType: .etf, shares: 2, averageCost: 410
+            accountID: brokerage.id, symbol: "VOO", assetType: .etf, shares: 2, averageCost: 410
         ))
 
         #expect(try repo.fetchHoldings(in: roth).count == 1)
@@ -110,14 +110,14 @@ struct PortfolioRepositoryTests {
 
         #expect(throws: PortfolioRepositoryError.nftRequiresManualValuation) {
             _ = try repo.commit(draftHolding: DraftHolding(
-                accountId: account.id,
+                accountID: account.id,
                 symbol: "PUNK-123",
                 assetType: .nft
             ))
         }
 
         let holding = try repo.commit(draftHolding: DraftHolding(
-            accountId: account.id,
+            accountID: account.id,
             symbol: "PUNK-123",
             assetType: .nft,
             manualValuation: 1500
@@ -132,7 +132,7 @@ struct PortfolioRepositoryTests {
 
         #expect(throws: PortfolioRepositoryError.nonNFTRequiresSharesAndCost) {
             _ = try repo.commit(draftHolding: DraftHolding(
-                accountId: account.id,
+                accountID: account.id,
                 symbol: "AAPL",
                 assetType: .stock
             ))
@@ -143,7 +143,7 @@ struct PortfolioRepositoryTests {
         let (repo, context) = try makeRepo()
         let account = try makeAccount(repo)
         _ = try repo.commit(draftHolding: DraftHolding(
-            accountId: account.id,
+            accountID: account.id,
             symbol: "AAPL",
             assetType: .stock,
             shares: 1,

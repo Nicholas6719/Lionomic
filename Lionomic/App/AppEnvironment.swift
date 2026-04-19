@@ -10,6 +10,7 @@ final class AppEnvironment {
     let watchlistRepository: WatchlistRepository
     let preferencesRepository: PreferencesRepository
     let historyService: HistoryService
+    let marketDataService: MarketDataService
     let keychainService = KeychainService()
     let biometricService = BiometricService()
 
@@ -21,6 +22,10 @@ final class AppEnvironment {
         self.watchlistRepository = WatchlistRepository(modelContext: context)
         self.preferencesRepository = PreferencesRepository(context: context)
         self.historyService = HistoryService(context: context)
+        self.marketDataService = MarketDataService(
+            modelContainer: modelContainer,
+            keychain: keychainService
+        )
     }
 
     func seedOnFirstLaunch() {

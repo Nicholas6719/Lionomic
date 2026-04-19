@@ -29,7 +29,7 @@ struct DraftAccount: Hashable {
 
 struct DraftHolding: Hashable {
     var id: UUID?
-    var accountId: UUID
+    var accountID: UUID
     var symbol: String
     var assetType: AssetType
     var shares: Decimal?
@@ -39,7 +39,7 @@ struct DraftHolding: Hashable {
 
     init(
         id: UUID? = nil,
-        accountId: UUID,
+        accountID: UUID,
         symbol: String = "",
         assetType: AssetType = .stock,
         shares: Decimal? = nil,
@@ -48,7 +48,7 @@ struct DraftHolding: Hashable {
         notes: String = ""
     ) {
         self.id = id
-        self.accountId = accountId
+        self.accountID = accountID
         self.symbol = symbol
         self.assetType = assetType
         self.shares = shares
@@ -59,7 +59,7 @@ struct DraftHolding: Hashable {
 
     init(editing holding: Holding) {
         self.id = holding.id
-        self.accountId = holding.account?.id ?? UUID()
+        self.accountID = holding.account?.id ?? UUID()
         self.symbol = holding.symbol
         self.assetType = holding.assetType
         self.shares = holding.shares
@@ -136,9 +136,9 @@ final class PortfolioRepository {
     // MARK: - Holdings
 
     func fetchHoldings(in account: Account) throws -> [Holding] {
-        let accountId = account.id
+        let accountID = account.id
         let descriptor = FetchDescriptor<Holding>(
-            predicate: #Predicate { $0.account?.id == accountId },
+            predicate: #Predicate { $0.account?.id == accountID },
             sortBy: [SortDescriptor(\.symbol)]
         )
         return try modelContext.fetch(descriptor)
@@ -152,10 +152,10 @@ final class PortfolioRepository {
     }
 
     func fetchHolding(in account: Account, symbol: String) throws -> Holding? {
-        let accountId = account.id
+        let accountID = account.id
         let normalized = Holding.normalize(symbol: symbol)
         let descriptor = FetchDescriptor<Holding>(
-            predicate: #Predicate { $0.account?.id == accountId && $0.symbol == normalized }
+            predicate: #Predicate { $0.account?.id == accountID && $0.symbol == normalized }
         )
         return try modelContext.fetch(descriptor).first
     }
@@ -164,7 +164,7 @@ final class PortfolioRepository {
     func commit(draftHolding draft: DraftHolding) throws -> Holding {
         try Self.validate(draft)
 
-        guard let account = try fetchAccount(id: draft.accountId) else {
+        guard let account = try fetchAccount(id: draft.accountID) else {
             throw PortfolioRepositoryError.accountNotFound
         }
 

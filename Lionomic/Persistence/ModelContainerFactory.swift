@@ -12,6 +12,7 @@ enum ModelContainerFactory {
         ContributionEvent.self,
         HoldingSnapshot.self,
         AccountSnapshot.self,
+        CachedQuote.self,
     ]
 
     static func makeSharedContainer(

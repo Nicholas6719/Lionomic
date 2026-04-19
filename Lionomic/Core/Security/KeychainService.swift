@@ -7,16 +7,18 @@ import Security
 ///   - Keys are never synced to iCloud Keychain.
 ///   - Keys do not survive a device restore or app reinstall.
 ///   - If a key is missing after reinstall, the user simply re-enters it.
-final class KeychainService {
+final class KeychainService: Sendable {
 
     // MARK: - Key identifiers
 
-    static let twelveDataApiKeyIdentifier = "lionomic.twelvedata.apikey"
-    static let finnhubApiKeyIdentifier    = "lionomic.finnhub.apikey"
+    nonisolated static let twelveDataApiKeyIdentifier = "lionomic.twelvedata.apikey"
+    nonisolated static let finnhubApiKeyIdentifier    = "lionomic.finnhub.apikey"
+
+    nonisolated init() {}
 
     // MARK: - Save
 
-    func save(_ value: String, for identifier: String) throws {
+    nonisolated func save(_ value: String, for identifier: String) throws {
         let data = Data(value.utf8)
         removeItem(for: identifier)
 
@@ -35,7 +37,7 @@ final class KeychainService {
 
     // MARK: - Load
 
-    func load(identifier: String) -> String? {
+    nonisolated func load(identifier: String) -> String? {
         let query: [CFString: Any] = [
             kSecClass:       kSecClassGenericPassword,
             kSecAttrAccount: identifier,
@@ -57,20 +59,20 @@ final class KeychainService {
 
     // MARK: - Presence check
 
-    func hasValue(for identifier: String) -> Bool {
+    nonisolated func hasValue(for identifier: String) -> Bool {
         guard let value = load(identifier: identifier) else { return false }
         return !value.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     // MARK: - Delete
 
-    func remove(identifier: String) {
+    nonisolated func remove(identifier: String) {
         removeItem(for: identifier)
     }
 
     // MARK: - Private
 
-    private func removeItem(for identifier: String) {
+    nonisolated private func removeItem(for identifier: String) {
         let query: [CFString: Any] = [
             kSecClass:       kSecClassGenericPassword,
             kSecAttrAccount: identifier

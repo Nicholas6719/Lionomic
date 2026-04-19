@@ -13,7 +13,7 @@ final class AddHoldingViewModel {
 
     init(account: Account) {
         self.account = account
-        self.draft   = DraftHolding(accountId: account.id)
+        self.draft   = DraftHolding(accountID: account.id)
     }
 
     var isNFT: Bool { draft.assetType == .nft }
