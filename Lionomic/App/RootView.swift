@@ -3,64 +3,28 @@ import SwiftData
 
 /// The root of the app's view hierarchy.
 ///
-/// M2 additions:
-///   - BiometricGateView overlay (appears when locked + biometrics enabled)
-///   - Locks on background, auto-triggers auth on foreground return
-///   - Settings toolbar button
+/// M2: BiometricGateView overlay + scenePhase lock-on-background watcher.
+/// M3: OnboardingView shown until preferences.firstLaunchComplete flips true.
+/// M6: Post-onboarding content is a 5-tab TabView (Dashboard / Portfolio /
+///     Watchlists / Insights / Settings).
 ///
-/// M3 additions:
-///   - OnboardingView shown until preferences.firstLaunchComplete flips true
-///
-/// The placeholder content is replaced in M6 with the tab bar.
+/// The biometric overlay and scenePhase watcher live on the outer body
+/// modifiers so they wrap whichever inner content is active.
 struct RootView: View {
 
     @Environment(AppEnvironment.self) private var env
     @Environment(\.scenePhase) private var scenePhase
-    @State private var showingSettings = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if env.preferencesRepository.currentPreferences?.firstLaunchComplete == true {
-                    // M0 placeholder — replaced in M6 with tab bar
-                    VStack(spacing: 16) {
-                        Text("Lionomic")
-                            .font(.largeTitle.weight(.bold))
-                        Text("Your private investing guide.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
-                        // ⚠ DEV SHORTCUT — removed in M6 when the tab bar lands.
-                        NavigationLink {
-                            WatchlistListView()
-                        } label: {
-                            Label("Watchlists (dev)", systemImage: "list.star")
-                        }
-                        .buttonStyle(.bordered)
-                        .padding(.top, 24)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if env.preferencesRepository.currentPreferences != nil {
-                    // Preferences loaded but onboarding not complete — show onboarding
-                    OnboardingView()
-                } else {
-                    // Preferences not yet loaded — blank screen briefly while seeding runs
-                    Color.clear
-                }
+        Group {
+            if env.preferencesRepository.currentPreferences?.firstLaunchComplete == true {
+                TabRoot()
+            } else if env.preferencesRepository.currentPreferences != nil {
+                OnboardingView()
+            } else {
+                // Preferences not yet loaded — blank screen briefly while seeding runs.
+                Color.clear
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel("Settings")
-                }
-            }
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
         }
         .overlay {
             let biometricsEnabled = env.preferencesRepository.currentPreferences?.biometricsEnabled ?? true

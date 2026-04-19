@@ -119,13 +119,9 @@ private struct HoldingRow: View {
         }
     }
 
-    private func formatCurrency(_ value: Decimal) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        return f.string(from: value as NSDecimalNumber) ?? "$\(value)"
-    }
+    private func formatCurrency(_ value: Decimal) -> String { MoneyFormatter.string(from: value) }
 
+    /// Shares are not money/percent — keep a local decimal helper here.
     private func formatDecimal(_ value: Decimal) -> String {
         let f = NumberFormatter()
         f.numberStyle = .decimal

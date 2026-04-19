@@ -165,10 +165,5 @@ private struct AddHoldingReviewSheet: View {
         .presentationDetents([.medium])
     }
 
-    private func formatCurrency(_ value: Decimal) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        return f.string(from: value as NSDecimalNumber) ?? "$\(value)"
-    }
+    private func formatCurrency(_ value: Decimal) -> String { MoneyFormatter.string(from: value) }
 }

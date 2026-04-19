@@ -101,27 +101,7 @@ struct WatchlistItemRow: View {
         return .secondary
     }
 
-    private func formatCurrency(_ value: Decimal) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        return f.string(from: value as NSDecimalNumber) ?? "$\(value)"
-    }
-
-    private func formatChange(_ value: Decimal) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.positivePrefix = "+" + (f.currencySymbol ?? "$")
-        return f.string(from: value as NSDecimalNumber) ?? "\(value)"
-    }
-
-    private func formatPercent(_ ratio: Decimal) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .percent
-        f.minimumFractionDigits = 2
-        f.maximumFractionDigits = 2
-        f.positivePrefix = "+"
-        return f.string(from: ratio as NSDecimalNumber) ?? "\(ratio)"
-    }
+    private func formatCurrency(_ value: Decimal) -> String { MoneyFormatter.string(from: value) }
+    private func formatChange(_ value: Decimal) -> String   { MoneyFormatter.signedString(from: value) }
+    private func formatPercent(_ ratio: Decimal) -> String  { PercentFormatter.signedString(from: ratio) }
 }
