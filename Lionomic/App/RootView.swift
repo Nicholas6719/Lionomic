@@ -23,12 +23,21 @@ struct RootView: View {
             Group {
                 if env.preferencesRepository.currentPreferences?.firstLaunchComplete == true {
                     // M0 placeholder — replaced in M6 with tab bar
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         Text("Lionomic")
                             .font(.largeTitle.weight(.bold))
                         Text("Your private investing guide.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+
+                        // ⚠ DEV SHORTCUT — removed in M6 when the tab bar lands.
+                        NavigationLink {
+                            WatchlistListView()
+                        } label: {
+                            Label("Watchlists (dev)", systemImage: "list.star")
+                        }
+                        .buttonStyle(.bordered)
+                        .padding(.top, 24)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if env.preferencesRepository.currentPreferences != nil {

@@ -2,12 +2,16 @@ import Foundation
 
 /// Primary provider for live quotes.
 ///
-/// Endpoint: `https://api.twelvedata.com/price?symbol=…&apikey=…`
-/// Response (success): `{"price": "123.45"}`
-/// Response (error):   `{"code": 401, "message": "...", "status": "error"}`
+/// Endpoint: `https://api.twelvedata.com/quote?symbol=…&apikey=…`
+/// Success response (abbreviated):
+///   { "symbol":"AAPL", "close":"187.45", "change":"1.23",
+///     "percent_change":"0.66", "currency":"USD", ... }
+/// Error response:
+///   { "code": 401, "message": "...", "status": "error" }
 ///
-/// The free `/price` endpoint does not return change or percent-change, so those
-/// fields are reported as zero. Upgrading to `/quote` would enrich this later.
+/// All numeric values come back as JSON strings. `percent_change` is a whole-number
+/// percent (e.g. "0.66" means 0.66%), so we divide by 100 to store it as a ratio
+/// in `QuoteResult.changePercent` — matching `FinnhubProvider`.
 struct TwelveDataProvider: MarketDataProvider {
 
     nonisolated let name = "Twelve Data"
@@ -27,7 +31,7 @@ struct TwelveDataProvider: MarketDataProvider {
             throw MarketDataError.missingAPIKey(provider: name)
         }
 
-        var components = URLComponents(string: "https://api.twelvedata.com/price")!
+        var components = URLComponents(string: "https://api.twelvedata.com/quote")!
         components.queryItems = [
             URLQueryItem(name: "symbol", value: symbol),
             URLQueryItem(name: "apikey", value: key),
@@ -55,19 +59,23 @@ struct TwelveDataProvider: MarketDataProvider {
             throw MarketDataError.networkError(providerName: name, message: errorPayload.message ?? "unknown")
         }
 
-        guard let payload = try? JSONDecoder().decode(TwelveDataPayload.self, from: data) else {
+        guard let payload = try? JSONDecoder().decode(TwelveDataQuotePayload.self, from: data) else {
             throw MarketDataError.decodingError(providerName: name)
         }
-        guard let price = Decimal(string: payload.price) else {
+        guard
+            let price = Decimal(string: payload.close),
+            let change = Decimal(string: payload.change ?? "0"),
+            let percentWhole = Decimal(string: payload.percent_change ?? "0")
+        else {
             throw MarketDataError.decodingError(providerName: name)
         }
 
         return QuoteResult(
             symbol: symbol,
             price: price,
-            change: 0,
-            changePercent: 0,
-            currency: "USD",
+            change: change,
+            changePercent: percentWhole / 100,  // Twelve Data returns percent in whole-number form; store ratio.
+            currency: payload.currency ?? "USD",
             fetchedAt: Date(),
             providerName: name
         )
@@ -76,8 +84,11 @@ struct TwelveDataProvider: MarketDataProvider {
 
 // MARK: - JSON (file-scope; nonisolated)
 
-nonisolated private struct TwelveDataPayload: Decodable, Sendable {
-    let price: String
+nonisolated private struct TwelveDataQuotePayload: Decodable, Sendable {
+    let close: String
+    let change: String?
+    let percent_change: String?
+    let currency: String?
 }
 
 nonisolated private struct TwelveDataErrorPayload: Decodable, Sendable {
