@@ -33,16 +33,20 @@ struct DraftPreferences: Hashable {
 
     /// First-run defaults.
     ///
-    /// The four alert-bool defaults below must stay in sync with the
-    /// `AppPreferences` model initializer — that model is the canonical
+    /// **All seven defaults below must stay in sync with the
+    /// `AppPreferences` model initializer.** That model is the canonical
     /// source of first-launch state because `PreferencesRepository.load()`
     /// creates the record via `AppPreferences()`, never via this Draft
-    /// initializer. Any drift is silent but observable (users see "On"
-    /// toggles in the editor that were never actually applied at launch).
+    /// initializer. Any drift is silent but observable — users would see
+    /// editor values that were never actually applied at launch. Covered
+    /// here: `morningBriefHour` / `morningBriefMinute` /
+    /// `quoteRefreshCadenceMinutes` plus the four alert bools. The two
+    /// remaining fields (`biometricsEnabled`, `contextualHelpEnabled`)
+    /// already match the model and don't need special attention.
     init() {
-        morningBriefHour                  = 8
-        morningBriefMinute                = 0
-        quoteRefreshCadenceMinutes        = 15
+        morningBriefHour                  = 7
+        morningBriefMinute                = 15
+        quoteRefreshCadenceMinutes        = 5
         biometricsEnabled                 = true
         contextualHelpEnabled             = true
         priceAlertsEnabled                = false
