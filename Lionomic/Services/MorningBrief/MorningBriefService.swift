@@ -134,21 +134,26 @@ final class MorningBriefService {
         return "Portfolio: \(MoneyFormatter.string(from: totals.total))"
     }
 
-    /// Aggregate day-change note across holdings that have fresh quotes.
-    /// `nil` when there's nothing to say.
+    /// Aggregate **intraday** absolute dollar change across non-NFT
+    /// holdings with fresh quotes. Derived from `QuoteResult.change` — the
+    /// provider's session delta — so it reflects today's move only. This
+    /// is **not** an unrealized gain/loss (no cost-basis comparison) and
+    /// **not** a historical delta (no `HoldingSnapshot` usage). Returns
+    /// `nil` when no holding has a fresh quote — better silent than a
+    /// stale or misleading number.
     private static func changeNote(
         accounts: [Account],
         quotes: [String: QuoteResult]
     ) -> String? {
         let holdings = accounts.flatMap { $0.holdings }
-        var totalChange: Decimal = 0
+        var totalIntradayChange: Decimal = 0
         var touched = false
         for h in holdings where h.assetType.usesMarketQuote {
             guard let shares = h.shares, let q = quotes[h.symbol], q.isFresh else { continue }
-            totalChange += shares * q.change
+            totalIntradayChange += shares * q.change
             touched = true
         }
         guard touched else { return nil }
-        return "Today's move: \(MoneyFormatter.signedString(from: totalChange))"
+        return "Today's change: \(MoneyFormatter.signedString(from: totalIntradayChange))"
     }
 }

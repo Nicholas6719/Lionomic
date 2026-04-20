@@ -117,6 +117,26 @@ private struct RecommendationRow: View {
                     .font(.caption2)
                     .foregroundStyle(.orange)
             }
+
+            // M11: surface the M8 structured supporting outputs. Collapsed
+            // by default — most users only want the winning rule's story.
+            if !recommendation.supportingOutputs.isEmpty {
+                DisclosureGroup("Also considered") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(recommendation.supportingOutputs, id: \.self) { output in
+                            HStack(alignment: .top, spacing: 8) {
+                                RecommendationCategoryBadge(category: output.category)
+                                Text(output.reasoning)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer(minLength: 0)
+                            }
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+                .font(.caption)
+            }
         }
         .padding(.vertical, 4)
     }
