@@ -1,9 +1,10 @@
 import SwiftUI
 import SwiftData
 
-/// The Dashboard tab. A vertically-scrollable stack of cards.
-/// Cards for features that land later (M7/M8) render placeholder content —
-/// hidden features look worse than labeled placeholders.
+/// The Dashboard tab. A vertically-scrollable stack of four cards:
+/// `PortfolioSummaryCard`, `WatchlistHighlightsCard`, `MorningBriefCard`,
+/// and `RecommendationsCard`. Each card owns its own load/empty/populated
+/// state and uses the shared `DashboardCard` wrapper for a consistent look.
 struct DashboardView: View {
     var body: some View {
         ScrollView {

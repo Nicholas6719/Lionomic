@@ -96,19 +96,22 @@ private struct HoldingRow: View {
             // NFT — no fetch attempted.
             EmptyView()
         } else if let quote {
-            HStack(spacing: 6) {
-                Text(formatCurrency(quote.price))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-                if !quote.isFresh {
-                    Text("stale")
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(formatCurrency(quote.price))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    if !quote.isFresh {
+                        Text("stale")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                    }
+                    Spacer()
+                    Text("via \(quote.providerName)")
                         .font(.caption2)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.tertiary)
                 }
-                Spacer()
-                Text("via \(quote.providerName)")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                unrealizedGainLossLine(quote: quote)
             }
         } else if hadError {
             Text("Quote unavailable")
@@ -116,6 +119,39 @@ private struct HoldingRow: View {
         } else {
             Text("Loading quote…")
                 .font(.caption).foregroundStyle(.tertiary)
+        }
+    }
+
+    /// M11: unrealized gain/loss beneath the quote line.
+    ///
+    /// Formula: `(quote.price - averageCost) × shares`, Decimal throughout.
+    /// Shown only when `averageCost > 0`, `shares > 0`, and the quote is
+    /// fresh. Otherwise renders "—" so the row height stays consistent
+    /// between eligible and ineligible holdings. Signed currency and
+    /// signed percent use the existing formatters — no new helpers.
+    @ViewBuilder
+    private func unrealizedGainLossLine(quote: QuoteResult) -> some View {
+        if let shares = holding.shares,
+           let cost = holding.averageCost,
+           cost > 0, shares > 0, quote.isFresh {
+            let delta = (quote.price - cost) * shares
+            let ratio = (quote.price - cost) / cost   // per-share percent, independent of shares
+            let tint: Color = {
+                if delta > 0 { return .green }
+                if delta < 0 { return .red }
+                return .secondary
+            }()
+            HStack(spacing: 4) {
+                Text(MoneyFormatter.signedString(from: delta))
+                    .font(.caption2.weight(.medium))
+                Text("(\(PercentFormatter.signedString(from: ratio)))")
+                    .font(.caption2)
+            }
+            .foregroundStyle(tint)
+        } else {
+            Text("—")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
     }
 
