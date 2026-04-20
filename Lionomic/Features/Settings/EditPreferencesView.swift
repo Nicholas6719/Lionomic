@@ -42,7 +42,7 @@ struct EditPreferencesView: View {
             } header: {
                 Text("Morning Brief")
             } footer: {
-                Text("Notifies you once daily at the chosen time. Delivery lands in a later milestone.")
+                Text("Lionomic delivers a Morning Brief notification around this time each day when the app refreshes in the background.")
             }
 
             Section {
