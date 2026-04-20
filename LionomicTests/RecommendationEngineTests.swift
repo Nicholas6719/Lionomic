@@ -134,9 +134,58 @@ struct RecommendationEngineTests {
             quote: nil
         )
         #expect(rec.categoryEnum == .reduce)
-        // Loser gets appended to supporting reasoning.
-        #expect(rec.reasoning.contains("Also considered"))
-        #expect(rec.reasoning.contains("eh"))
+        // Primary reasoning is only the winning rule's text — no more
+        // string-concatenation of losers.
+        #expect(rec.reasoning == "too big")
+        #expect(rec.reasoning.contains("Also considered") == false)
+        // Loser moves to structured supporting outputs.
+        #expect(rec.supportingOutputs.count == 1)
+        #expect(rec.supportingOutputs.first?.reasoning == "eh")
+        #expect(rec.supportingOutputs.first?.category == .hold)
+    }
+
+    @Test func supportingOutputsPopulatedWhenMultipleRulesFire() async throws {
+        let (holding, account) = try makeEverything()
+
+        struct RuleA: RecommendationRule {
+            let name = "RuleA"
+            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+                RuleOutput(ruleName: name, category: .reduce, reasoning: "A", confidence: 0.9, cautionNote: "careful-A")
+            }
+        }
+        struct RuleB: RecommendationRule {
+            let name = "RuleB"
+            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+                RuleOutput(ruleName: name, category: .wait, reasoning: "B", confidence: 0.6, cautionNote: "careful-B")
+            }
+        }
+        struct RuleC: RecommendationRule {
+            let name = "RuleC"
+            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+                RuleOutput(ruleName: name, category: .researchMore, reasoning: "C", confidence: 0.3)
+            }
+        }
+
+        let engine = RecommendationEngine(rules: [RuleC(), RuleA(), RuleB()])
+        let rec = engine.evaluate(
+            holding: holding,
+            account: account,
+            profile: InvestingProfile(),
+            quote: nil
+        )
+
+        // Winner (RuleA) is primary.
+        #expect(rec.reasoning == "A")
+        #expect(rec.cautionNote == "careful-A")
+
+        // The other two are persisted as structured RecommendationOutputs,
+        // ordered by confidence descending (B before C).
+        #expect(rec.supportingOutputs.count == 2)
+        let first = rec.supportingOutputs.first
+        #expect(first?.reasoning == "B")
+        #expect(first?.category == .wait)
+        #expect(first?.confidence == Decimal(0.6))
+        #expect(first?.cautionNote == "careful-B")
     }
 
     @Test func defaultRulesWireUpFiveRules() async throws {

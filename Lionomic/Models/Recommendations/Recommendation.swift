@@ -54,6 +54,12 @@ final class Recommendation {
     var confidence: Double
     var cautionNote: String
     var generatedAt: Date
+    /// Structured supporting outputs from other rules that fired. Replaces
+    /// the M7 practice of concatenating "Also considered:" bullets into
+    /// `reasoning`. `reasoning` now holds only the winning rule's text.
+    /// SwiftData stores Codable arrays as composite attributes — no
+    /// explicit `@Attribute` needed; default `[]` keeps existing rows valid.
+    var supportingOutputs: [RecommendationOutput] = []
 
     init(
         id: UUID = UUID(),
@@ -65,18 +71,20 @@ final class Recommendation {
         reasoning: String,
         confidence: Double,
         cautionNote: String = "",
+        supportingOutputs: [RecommendationOutput] = [],
         generatedAt: Date = .now
     ) {
-        self.id          = id
-        self.holdingID   = holdingID
-        self.accountID   = accountID
-        self.symbol      = symbol
-        self.assetType   = assetType.rawValue
-        self.category    = category.rawValue
-        self.reasoning   = reasoning
-        self.confidence  = confidence
-        self.cautionNote = cautionNote
-        self.generatedAt = generatedAt
+        self.id                = id
+        self.holdingID         = holdingID
+        self.accountID         = accountID
+        self.symbol            = symbol
+        self.assetType         = assetType.rawValue
+        self.category          = category.rawValue
+        self.reasoning         = reasoning
+        self.confidence        = confidence
+        self.cautionNote       = cautionNote
+        self.supportingOutputs = supportingOutputs
+        self.generatedAt       = generatedAt
     }
 
     var categoryEnum: RecommendationCategory {

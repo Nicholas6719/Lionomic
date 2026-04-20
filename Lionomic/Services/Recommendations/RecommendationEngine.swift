@@ -6,9 +6,11 @@ import Foundation
 ///
 /// Aggregation rules:
 ///   - No rules fire → `.hold` + "No signals detected."
-///   - One rule fires → that output wins.
+///   - One rule fires → that output wins; `supportingOutputs` is empty.
 ///   - Multiple rules fire → highest-confidence output wins; the others
-///     are appended to `reasoning` as supporting notes.
+///     are stored as structured `RecommendationOutput` entries on
+///     `Recommendation.supportingOutputs`. `reasoning` holds only the
+///     winning rule's text — no string concatenation.
 ///   - NFT clamp: after aggregation, if the holding is an NFT and the
 ///     winning category is outside `{hold, researchMore, reduce}`, it is
 ///     rewritten to `.researchMore`.
@@ -44,7 +46,7 @@ nonisolated struct RecommendationEngine {
         }
 
         let primary: RuleOutput
-        let supportingReasoning: String
+        let supporting: [RecommendationOutput]
         if outputs.isEmpty {
             primary = RuleOutput(
                 ruleName: "Default",
@@ -52,20 +54,14 @@ nonisolated struct RecommendationEngine {
                 reasoning: "No signals detected.",
                 confidence: 0.5
             )
-            supportingReasoning = ""
+            supporting = []
         } else {
             let sorted = outputs.sorted { $0.confidence > $1.confidence }
             primary = sorted[0]
-            if sorted.count > 1 {
-                let extras = sorted.dropFirst().map { "• \($0.reasoning)" }.joined(separator: "\n")
-                supportingReasoning = "\n\nAlso considered:\n\(extras)"
-            } else {
-                supportingReasoning = ""
-            }
+            supporting = sorted.dropFirst().map { $0.asRecommendationOutput }
         }
 
         let clampedCategory = Self.clamp(primary.category, for: holding.assetType)
-        let finalReasoning = primary.reasoning + supportingReasoning
 
         return Recommendation(
             holdingID: holding.id,
@@ -73,9 +69,10 @@ nonisolated struct RecommendationEngine {
             symbol: holding.symbol,
             assetType: holding.assetType,
             category: clampedCategory,
-            reasoning: finalReasoning,
+            reasoning: primary.reasoning,
             confidence: primary.confidence,
             cautionNote: primary.cautionNote,
+            supportingOutputs: supporting,
             generatedAt: date
         )
     }

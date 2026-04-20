@@ -1,7 +1,8 @@
 import Foundation
 
 /// Output from a single rule firing. Pure value type; the engine collects
-/// these and picks a winner by confidence.
+/// these and picks a winner by confidence. Internal to the rules layer —
+/// persisted supporting outputs use `RecommendationOutput`.
 struct RuleOutput: Hashable, Sendable {
     let ruleName: String
     let category: RecommendationCategory
@@ -20,6 +21,41 @@ struct RuleOutput: Hashable, Sendable {
         self.category    = category
         self.reasoning   = reasoning
         self.confidence  = max(0, min(1, confidence))
+        self.cautionNote = cautionNote
+    }
+
+    /// Narrow the rule-output to the persisted shape — drops `ruleName` and
+    /// widens `confidence` to `Decimal` to match `RecommendationOutput`.
+    var asRecommendationOutput: RecommendationOutput {
+        RecommendationOutput(
+            category: category,
+            reasoning: reasoning,
+            confidence: Decimal(confidence),
+            cautionNote: cautionNote
+        )
+    }
+}
+
+/// Codable value type representing a single rule output in persisted form.
+/// Stored on `Recommendation.supportingOutputs` so views, tests, and future
+/// consumers can iterate the set of contributing rules without parsing
+/// strings. `confidence` is `Decimal` (persisted shape), distinct from
+/// the rules-layer `RuleOutput` which carries `Double`.
+struct RecommendationOutput: Codable, Hashable, Sendable {
+    let category: RecommendationCategory
+    let reasoning: String
+    let confidence: Decimal
+    let cautionNote: String
+
+    init(
+        category: RecommendationCategory,
+        reasoning: String,
+        confidence: Decimal,
+        cautionNote: String = ""
+    ) {
+        self.category    = category
+        self.reasoning   = reasoning
+        self.confidence  = confidence
         self.cautionNote = cautionNote
     }
 }
