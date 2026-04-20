@@ -1,25 +1,30 @@
 import Foundation
-import UserNotifications
 import os
 
 /// Generates `MorningBrief` values from passed-in model objects and owns
-/// the narrow notification/BGTask integration for the M8 Morning Brief
-/// feature. No SwiftData dependency — the service consumes whatever the
-/// caller hands it, which keeps it trivially testable.
+/// the narrow notification integration for the Morning Brief feature.
+/// No SwiftData dependency — the service consumes whatever the caller
+/// hands it, which keeps it trivially testable.
 ///
-/// Notification scope is intentionally limited: we do not build a full
-/// `NotificationService` here (that arrives in M9). This type exposes
-/// only what the Morning Brief pipeline needs.
+/// All UNUserNotificationCenter access goes through `NotificationService`
+/// (M9 consolidation). This class no longer touches `UserNotifications`
+/// directly.
 @MainActor
 final class MorningBriefService {
+
+    private let notificationService: NotificationService
+
+    init(notificationService: NotificationService) {
+        self.notificationService = notificationService
+    }
 
     /// Pure, synchronous. No I/O. Safe to call from BGTask handlers,
     /// view `.task` closures, and tests.
     ///
-    /// Spec deviation: `Recommendation` objects don't live on `Account`,
-    /// so a fourth `recommendations:` parameter was added to supply the
+    /// Spec deviation carried from M8: `Recommendation` objects don't
+    /// live on `Account`, so a `recommendations:` parameter supplies the
     /// pool that `topRecommendations` draws from. Defaults to `[]` so
-    /// callers without recommendations yet still get a valid brief.
+    /// callers without recommendations still get a valid brief.
     func generateBrief(
         accounts: [Account],
         profile: InvestingProfile,
@@ -62,45 +67,21 @@ final class MorningBriefService {
 
     // MARK: - Notifications
 
-    /// Requests `.alert + .sound` authorization only if the system has
-    /// never decided (`.notDetermined`). Call sites should always use
-    /// this — we never silently re-prompt.
+    /// Lazy auth request. Forwards to `NotificationService`; kept on this
+    /// type so the BGTask handler and card view don't need to know about
+    /// the notification plumbing.
     func requestNotificationAuthorizationIfNeeded() async {
-        let center = UNUserNotificationCenter.current()
-        let settings = await center.notificationSettings()
-        guard settings.authorizationStatus == .notDetermined else { return }
-        do {
-            _ = try await center.requestAuthorization(options: [.alert, .sound])
-        } catch {
-            Log.app.error("Notification auth request failed: \(String(describing: error), privacy: .public)")
-        }
+        await notificationService.requestAuthorization()
     }
 
-    /// Posts (or replaces) the daily morning-brief notification. Uses a
-    /// stable identifier so repeat fires overwrite instead of stacking.
-    /// Silent no-op when the user hasn't authorized — never re-prompts.
+    /// Posts (or replaces) the daily morning-brief notification. The
+    /// stable identifier means repeat fires overwrite instead of stacking.
     func postMorningBriefNotification(_ brief: MorningBrief) async {
-        let center = UNUserNotificationCenter.current()
-        let settings = await center.notificationSettings()
-        guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
-            return
-        }
-
-        let content = UNMutableNotificationContent()
-        content.title = "Lionomic Morning Brief"
-        content.body  = Self.truncated(brief.narrativeSummary, limit: 150)
-        content.sound = .default
-
-        let request = UNNotificationRequest(
-            identifier: Self.notificationIdentifier,
-            content: content,
-            trigger: nil
+        await notificationService.send(
+            title: "Lionomic Morning Brief",
+            body: Self.truncated(brief.narrativeSummary, limit: 150),
+            identifier: Self.notificationIdentifier
         )
-        do {
-            try await center.add(request)
-        } catch {
-            Log.app.error("Morning brief notification post failed: \(String(describing: error), privacy: .public)")
-        }
     }
 
     // MARK: - Constants
@@ -170,5 +151,4 @@ final class MorningBriefService {
         guard touched else { return nil }
         return "Today's move: \(MoneyFormatter.signedString(from: totalChange))"
     }
-
 }

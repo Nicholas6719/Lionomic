@@ -13,6 +13,7 @@ final class AppEnvironment {
     let marketDataService: MarketDataService
     let recommendationService: RecommendationService
     let morningBriefService: MorningBriefService
+    let notificationService: NotificationService
     let keychainService = KeychainService()
     let biometricService = BiometricService()
 
@@ -28,12 +29,15 @@ final class AppEnvironment {
             modelContainer: modelContainer,
             keychain: keychainService
         )
+        self.notificationService = NotificationService()
         self.recommendationService = RecommendationService(
             modelContext: context,
             marketDataService: self.marketDataService,
             profileRepository: self.profileRepository
         )
-        self.morningBriefService = MorningBriefService()
+        self.morningBriefService = MorningBriefService(
+            notificationService: self.notificationService
+        )
     }
 
     func seedOnFirstLaunch() {

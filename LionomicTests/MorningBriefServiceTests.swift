@@ -82,7 +82,7 @@ struct MorningBriefServiceTests {
         let account = try repo.commit(draftAccount: DraftAccount(kind: .brokerage, displayName: "X"))
         _ = account
 
-        let svc = MorningBriefService()
+        let svc = MorningBriefService(notificationService: NotificationService())
         let brief = svc.generateBrief(
             accounts: [account],
             profile: InvestingProfile(),
@@ -110,7 +110,7 @@ struct MorningBriefServiceTests {
             assetType: .stock, category: .buyNow, reasoning: "r3", confidence: 0.6
         )
 
-        let svc = MorningBriefService()
+        let svc = MorningBriefService(notificationService: NotificationService())
         let brief = svc.generateBrief(
             accounts: [account],
             profile: InvestingProfile(),
@@ -131,7 +131,7 @@ struct MorningBriefServiceTests {
             shares: 10, averageCost: 100
         ))
 
-        let svc = MorningBriefService()
+        let svc = MorningBriefService(notificationService: NotificationService())
         // Only a stale quote — the brief must not emit a total line.
         let brief = svc.generateBrief(
             accounts: [account],
@@ -151,7 +151,7 @@ struct MorningBriefServiceTests {
             shares: 10, averageCost: 100
         ))
 
-        let svc = MorningBriefService()
+        let svc = MorningBriefService(notificationService: NotificationService())
         let brief = svc.generateBrief(
             accounts: [account],
             profile: InvestingProfile(),
@@ -164,7 +164,7 @@ struct MorningBriefServiceTests {
     }
 
     @Test func briefNeverCrashesOnEmptyInput() async throws {
-        let svc = MorningBriefService()
+        let svc = MorningBriefService(notificationService: NotificationService())
         let brief = svc.generateBrief(
             accounts: [],
             profile: InvestingProfile(),
