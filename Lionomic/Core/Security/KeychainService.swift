@@ -13,6 +13,10 @@ final class KeychainService: Sendable {
 
     nonisolated static let twelveDataApiKeyIdentifier = "lionomic.twelvedata.apikey"
     nonisolated static let finnhubApiKeyIdentifier    = "lionomic.finnhub.apikey"
+    /// Anthropic API key slot — persisted by `ApiKeysView` so the future
+    /// Chat feature can consume it. Not wired to any live service in V1
+    /// (see `NoopAIService` / `AnthropicAIService` stub).
+    nonisolated static let anthropicApiKeyIdentifier  = "lionomic.anthropic.apikey"
 
     nonisolated init() {}
 

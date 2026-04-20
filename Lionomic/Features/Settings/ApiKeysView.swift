@@ -39,6 +39,19 @@ struct ApiKeysView: View {
             }
 
             Section {
+                ApiKeyEntryRow(
+                    providerName: "Anthropic",
+                    keyIsSaved: viewModel.anthropicKeyIsSaved,
+                    draftKey: $bindableVM.draftAnthropicKey,
+                    onDelete: { viewModel.deleteAnthropicKey() }
+                )
+            } header: {
+                Text("AI (Coming Soon)")
+            } footer: {
+                Text("Reserved for a future AI-powered Chat feature. Saving a key has no effect in this release — it is stored securely in the Keychain for later.")
+            }
+
+            Section {
                 Button("Review and Save Keys") {
                     viewModel.requestReview()
                 }
@@ -99,11 +112,15 @@ private struct ApiKeysReviewSheet: View {
                 Section("Keys to be saved") {
                     let trimmedTD = viewModel.draftTwelveDataKey.trimmingCharacters(in: .whitespaces)
                     let trimmedFH = viewModel.draftFinnhubKey.trimmingCharacters(in: .whitespaces)
+                    let trimmedAN = viewModel.draftAnthropicKey.trimmingCharacters(in: .whitespaces)
                     if !trimmedTD.isEmpty {
                         LabeledContent("Twelve Data", value: maskedKey(trimmedTD))
                     }
                     if !trimmedFH.isEmpty {
                         LabeledContent("Finnhub", value: maskedKey(trimmedFH))
+                    }
+                    if !trimmedAN.isEmpty {
+                        LabeledContent("Anthropic", value: maskedKey(trimmedAN))
                     }
                 }
                 Section {

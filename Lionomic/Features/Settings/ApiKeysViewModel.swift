@@ -9,10 +9,12 @@ final class ApiKeysViewModel {
     // Draft state
     var draftTwelveDataKey: String = ""
     var draftFinnhubKey: String = ""
+    var draftAnthropicKey: String = ""
 
     // Display state — presence only, never the actual key value
     private(set) var twelveDataKeyIsSaved: Bool = false
     private(set) var finnhubKeyIsSaved: Bool = false
+    private(set) var anthropicKeyIsSaved: Bool = false
 
     var showingReviewSheet: Bool = false
 
@@ -25,7 +27,8 @@ final class ApiKeysViewModel {
 
     var canRequestReview: Bool {
         !draftTwelveDataKey.trimmingCharacters(in: .whitespaces).isEmpty ||
-        !draftFinnhubKey.trimmingCharacters(in: .whitespaces).isEmpty
+        !draftFinnhubKey.trimmingCharacters(in: .whitespaces).isEmpty ||
+        !draftAnthropicKey.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     func requestReview() {
@@ -38,12 +41,15 @@ final class ApiKeysViewModel {
 
         let td = draftTwelveDataKey.trimmingCharacters(in: .whitespaces)
         let fh = draftFinnhubKey.trimmingCharacters(in: .whitespaces)
+        let an = draftAnthropicKey.trimmingCharacters(in: .whitespaces)
 
         if !td.isEmpty { try? keychain.save(td, for: KeychainService.twelveDataApiKeyIdentifier) }
         if !fh.isEmpty { try? keychain.save(fh, for: KeychainService.finnhubApiKeyIdentifier) }
+        if !an.isEmpty { try? keychain.save(an, for: KeychainService.anthropicApiKeyIdentifier) }
 
         draftTwelveDataKey = ""
         draftFinnhubKey    = ""
+        draftAnthropicKey  = ""
         showingReviewSheet = false
         refreshSavedState()
     }
@@ -58,9 +64,15 @@ final class ApiKeysViewModel {
         refreshSavedState()
     }
 
+    func deleteAnthropicKey() {
+        keychain?.remove(identifier: KeychainService.anthropicApiKeyIdentifier)
+        refreshSavedState()
+    }
+
     private func refreshSavedState() {
         guard let keychain else { return }
         twelveDataKeyIsSaved = keychain.hasValue(for: KeychainService.twelveDataApiKeyIdentifier)
         finnhubKeyIsSaved    = keychain.hasValue(for: KeychainService.finnhubApiKeyIdentifier)
+        anthropicKeyIsSaved  = keychain.hasValue(for: KeychainService.anthropicApiKeyIdentifier)
     }
 }
