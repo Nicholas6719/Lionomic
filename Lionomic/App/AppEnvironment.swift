@@ -15,6 +15,10 @@ final class AppEnvironment {
     let recommendationService: RecommendationService
     let morningBriefService: MorningBriefService
     let notificationService: NotificationService
+    /// M10 scaffold wiring: always `NoopAIService` in V1. The swap to
+    /// `AnthropicAIService(apiKey:)` happens here and nowhere else once
+    /// the concrete implementation lands.
+    let aiService: any AIService
     let keychainService = KeychainService()
     let biometricService = BiometricService()
 
@@ -43,6 +47,7 @@ final class AppEnvironment {
         self.morningBriefService = MorningBriefService(
             notificationService: self.notificationService
         )
+        self.aiService = NoopAIService()
     }
 
     func seedOnFirstLaunch() {

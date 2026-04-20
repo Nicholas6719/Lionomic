@@ -1,10 +1,23 @@
 import SwiftUI
 import SwiftData
 
-/// The 5-tab root shown after onboarding completes.
+/// The root TabView shown after onboarding completes. 5 tabs ship in V1,
+/// plus an optional 6th Chat tab gated on `AppPreferences.chatEnabled`.
+///
+/// When `chatEnabled == false` the Chat tab is not emitted into the view
+/// hierarchy at all — it cannot be reached by swipe, keyboard, or state
+/// restoration. Flipping the flag at runtime adds the tab without any
+/// other wiring change.
+///
 /// Each tab wraps its content in its own `NavigationStack` so navigation
 /// state is scoped per-tab.
 struct TabRoot: View {
+
+    @Environment(AppEnvironment.self) private var env
+
+    private var chatEnabled: Bool {
+        env.preferencesRepository.currentPreferences?.chatEnabled == true
+    }
 
     var body: some View {
         TabView {
@@ -22,6 +35,11 @@ struct TabRoot: View {
 
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+
+            if chatEnabled {
+                NavigationStack { ChatPlaceholderView() }
+                    .tabItem { Label("Chat", systemImage: "message") }
+            }
         }
     }
 }

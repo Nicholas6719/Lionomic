@@ -13,6 +13,15 @@ final class AppPreferences {
     var watchlistAlertsEnabled: Bool
     var holdingRiskAlertsEnabled: Bool
     var recommendationChangeAlertsEnabled: Bool
+    /// Feature flag for the AI-powered Chat tab. Default `false` in V1.
+    /// Deliberately **not** part of `DraftPreferences` — it is not user-
+    /// editable from Settings; flipping it is a development affordance
+    /// until the Chat feature ships. `TabRoot` reads it at render time.
+    ///
+    /// Inline default is required for SwiftData lightweight migration —
+    /// rows persisted before M10 have no value for this column and the
+    /// migrator reads the property-level default. Don't remove it.
+    var chatEnabled: Bool = false
     var updatedAt: Date
 
     init(
@@ -26,6 +35,7 @@ final class AppPreferences {
         watchlistAlertsEnabled: Bool = false,
         holdingRiskAlertsEnabled: Bool = false,
         recommendationChangeAlertsEnabled: Bool = false,
+        chatEnabled: Bool = false,
         updatedAt: Date = Date()
     ) {
         self.morningBriefHour = morningBriefHour
@@ -38,6 +48,7 @@ final class AppPreferences {
         self.watchlistAlertsEnabled = watchlistAlertsEnabled
         self.holdingRiskAlertsEnabled = holdingRiskAlertsEnabled
         self.recommendationChangeAlertsEnabled = recommendationChangeAlertsEnabled
+        self.chatEnabled = chatEnabled
         self.updatedAt = updatedAt
     }
 }
