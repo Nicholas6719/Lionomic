@@ -35,7 +35,10 @@ final class AppEnvironment {
         self.recommendationService = RecommendationService(
             modelContext: context,
             marketDataService: self.marketDataService,
-            profileRepository: self.profileRepository
+            profileRepository: self.profileRepository,
+            preferencesRepository: self.preferencesRepository,
+            notificationService: self.notificationService,
+            alertRepository: self.alertRepository
         )
         self.morningBriefService = MorningBriefService(
             notificationService: self.notificationService

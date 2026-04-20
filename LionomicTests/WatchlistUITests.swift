@@ -28,7 +28,9 @@ struct WatchlistUITests {
 
         #expect(item.symbol == "AAPL")
         #expect(item.watchlist?.kind == .standard)
-        #expect(item.alertsEnabled == false)
+        // M9: DraftWatchlistItem.alertsEnabled default flipped to true
+        // now that notification delivery is wired up.
+        #expect(item.alertsEnabled == true)
     }
 
     @Test("Adding a duplicate symbol to the same watchlist fails with duplicateSymbolInWatchlist")
@@ -110,14 +112,15 @@ struct WatchlistUITests {
         #expect(item.targetBuyBelow == nil)
     }
 
-    @Test("alertsEnabled defaults to false on a new DraftWatchlistItem")
-    func alertsEnabledDefaultIsFalse() {
+    @Test("alertsEnabled defaults to true on a new DraftWatchlistItem (M9)")
+    func alertsEnabledDefaultIsTrue() {
         let draft = DraftWatchlistItem(
             watchlistKind: .standard,
             symbol: "MSFT",
             assetType: .stock
         )
-        #expect(draft.alertsEnabled == false)
+        // M9: default-on because the alert delivery pipeline is live now.
+        #expect(draft.alertsEnabled == true)
         #expect(draft.targetBuyBelow == nil)
         #expect(draft.notes == "")
     }

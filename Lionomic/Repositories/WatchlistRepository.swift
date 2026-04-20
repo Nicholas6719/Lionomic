@@ -17,7 +17,7 @@ struct DraftWatchlistItem: Hashable {
         assetType: AssetType,
         notes: String = "",
         targetBuyBelow: Decimal? = nil,
-        alertsEnabled: Bool = false
+        alertsEnabled: Bool = true   // M9: default-on now that alert delivery is wired up
     ) {
         self.id = id
         self.watchlistKind = watchlistKind
