@@ -9,6 +9,7 @@ final class AppEnvironment {
     let portfolioRepository: PortfolioRepository
     let watchlistRepository: WatchlistRepository
     let preferencesRepository: PreferencesRepository
+    let alertRepository: AlertRepository
     let historyService: HistoryService
     let marketDataService: MarketDataService
     let recommendationService: RecommendationService
@@ -24,6 +25,7 @@ final class AppEnvironment {
         self.portfolioRepository = PortfolioRepository(modelContext: context)
         self.watchlistRepository = WatchlistRepository(modelContext: context)
         self.preferencesRepository = PreferencesRepository(context: context)
+        self.alertRepository = AlertRepository(modelContext: context)
         self.historyService = HistoryService(context: context)
         self.marketDataService = MarketDataService(
             modelContainer: modelContainer,
@@ -73,6 +75,11 @@ final class AppEnvironment {
         wipe(AccountSnapshot.self,   in: context)
         wipe(CachedQuote.self,       in: context)
         wipe(Recommendation.self,    in: context)
+        wipe(AlertEvent.self,        in: context)
+
+        // Drop any pending/delivered notifications — a data reset shouldn't
+        // leave stale alerts sitting in Notification Center.
+        notificationService.cancelAll()
 
         preferencesRepository.currentPreferences?.firstLaunchComplete = false
         preferencesRepository.currentPreferences?.updatedAt = Date()
