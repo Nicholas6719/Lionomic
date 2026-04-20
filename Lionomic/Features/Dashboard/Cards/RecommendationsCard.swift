@@ -7,38 +7,51 @@ struct RecommendationsCard: View {
 
     @Environment(AppEnvironment.self) private var env
     @State private var top: [Recommendation] = []
+    @State private var hasLoaded = false
 
     var body: some View {
         DashboardCard(title: "Recommendations", systemImage: "lightbulb.fill") {
-            if top.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("No recommendations yet.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Text("Open the Insights tab to generate fresh recommendations from your holdings.")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(top) { rec in
-                        TopRow(recommendation: rec)
-                        if rec.id != top.last?.id { Divider() }
-                    }
-                    NavigationLink {
-                        RecommendationsListView()
-                    } label: {
-                        Text("See all")
-                            .font(.caption.weight(.medium))
-                    }
-                    .padding(.top, 4)
-                }
-            }
+            content
         }
         .task { await reload() }
     }
 
+    @ViewBuilder
+    private var content: some View {
+        if !hasLoaded {
+            HStack {
+                Spacer()
+                ProgressView()
+                Spacer()
+            }
+            .padding(.vertical, 16)
+        } else if top.isEmpty {
+            ContentUnavailableView {
+                Label("No recommendations yet", systemImage: "lightbulb")
+            } description: {
+                Text("Open the Insights tab to generate fresh recommendations from your holdings.")
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(top) { rec in
+                    TopRow(recommendation: rec)
+                    if rec.id != top.last?.id { Divider() }
+                }
+                NavigationLink {
+                    RecommendationsListView()
+                } label: {
+                    Text("See all")
+                        .font(.caption.weight(.medium))
+                }
+                .padding(.top, 4)
+            }
+        }
+    }
+
     private func reload() async {
+        defer { hasLoaded = true }
         let all = (try? env.recommendationService.fetchAll()) ?? []
         top = Array(all.prefix(3))
     }

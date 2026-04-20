@@ -7,32 +7,46 @@ struct WatchlistHighlightsCard: View {
     @Environment(AppEnvironment.self) private var env
     @State private var items: [WatchlistItem] = []
     @State private var quotes: [String: QuoteResult] = [:]
+    @State private var hasLoaded = false
 
     var body: some View {
         DashboardCard(title: "High-Priority Watchlist", systemImage: "star.fill") {
-            if items.isEmpty {
-                ContentUnavailableView {
-                    Label("No opportunities yet", systemImage: "star")
-                } description: {
-                    Text("Add symbols to your high-priority watchlist to see them here.")
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(items.prefix(3)) { item in
-                        HighlightRow(item: item, quote: quotes[item.symbol])
-                        if item.id != items.prefix(3).last?.id {
-                            Divider()
-                        }
-                    }
-                }
-            }
+            content
         }
         .task { await reload() }
     }
 
+    @ViewBuilder
+    private var content: some View {
+        if !hasLoaded {
+            HStack {
+                Spacer()
+                ProgressView()
+                Spacer()
+            }
+            .padding(.vertical, 16)
+        } else if items.isEmpty {
+            ContentUnavailableView {
+                Label("No opportunities yet", systemImage: "star")
+            } description: {
+                Text("Add symbols to your high-priority watchlist to see them here.")
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(items.prefix(3)) { item in
+                    HighlightRow(item: item, quote: quotes[item.symbol])
+                    if item.id != items.prefix(3).last?.id {
+                        Divider()
+                    }
+                }
+            }
+        }
+    }
+
     private func reload() async {
+        defer { hasLoaded = true }
         let all = (try? env.watchlistRepository.fetchItems(in: .highPriorityOpportunity)) ?? []
         items = Array(all.prefix(3))
         for item in items where item.assetType.usesMarketQuote {

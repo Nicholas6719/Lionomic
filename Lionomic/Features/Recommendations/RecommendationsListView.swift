@@ -9,6 +9,7 @@ struct RecommendationsListView: View {
     @State private var accounts: [Account] = []
     @State private var recommendations: [Recommendation] = []
     @State private var isGenerating = false
+    @State private var hasLoaded = false
 
     var body: some View {
         content
@@ -33,7 +34,15 @@ struct RecommendationsListView: View {
 
     @ViewBuilder
     private var content: some View {
-        if recommendations.isEmpty {
+        if !hasLoaded {
+            // M11 consistency: ProgressView during initial load keeps the
+            // empty state from flashing before the fetch completes.
+            HStack {
+                Spacer()
+                ProgressView()
+                Spacer()
+            }
+        } else if recommendations.isEmpty {
             ContentUnavailableView {
                 Label("No recommendations yet", systemImage: "lightbulb")
             } description: {
@@ -78,6 +87,7 @@ struct RecommendationsListView: View {
     }
 
     private func reload() async {
+        defer { hasLoaded = true }
         accounts = (try? env.portfolioRepository.fetchAccounts()) ?? []
         recommendations = (try? env.recommendationService.fetchAll()) ?? []
     }

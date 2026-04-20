@@ -59,14 +59,25 @@ struct EditPreferencesView: View {
             }
 
             Section {
-                Toggle("Price Movement Alerts",          isOn: $draft.priceAlertsEnabled)
-                Toggle("Watchlist Opportunity Alerts",   isOn: $draft.watchlistAlertsEnabled)
                 Toggle("Holding Risk Alerts",            isOn: $draft.holdingRiskAlertsEnabled)
                 Toggle("Recommendation Change Alerts",   isOn: $draft.recommendationChangeAlertsEnabled)
             } header: {
                 Text("Notifications")
             } footer: {
                 Text("Notifications are scheduled locally — nothing is sent to a server.")
+            }
+
+            // M11: Price Movement and Watchlist Opportunity alerts have no
+            // backing delivery logic in V1. They're split into their own
+            // section with an honest footer rather than sitting next to
+            // the wired toggles as if they all behave the same way.
+            Section {
+                Toggle("Price Movement Alerts",          isOn: $draft.priceAlertsEnabled)
+                Toggle("Watchlist Opportunity Alerts",   isOn: $draft.watchlistAlertsEnabled)
+            } header: {
+                Text("Notifications (Coming Soon)")
+            } footer: {
+                Text("Reserved for a future update. Toggling these has no effect in this release — your choice is saved and will activate when delivery lands.")
             }
 
             Section {

@@ -63,16 +63,22 @@ struct MorningBriefCard: View {
                 }
             }
         } else {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("No brief yet.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            // M11 consistency: empty state uses ContentUnavailableView like
+            // the other dashboard cards. Kept the Generate action by putting
+            // the button in ContentUnavailableView's `actions` slot.
+            ContentUnavailableView {
+                Label("No brief yet", systemImage: "sun.max")
+            } description: {
+                Text("Tap Generate to produce today's Morning Brief.")
+            } actions: {
                 Button("Generate") {
                     Task { await regenerate() }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
         }
     }
 
