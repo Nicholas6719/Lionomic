@@ -8,7 +8,13 @@ struct LionomicApp: App {
     init() {
         do {
             let container = try ModelContainerFactory.makeSharedContainer()
-            _appEnvironment = State(initialValue: AppEnvironment(modelContainer: container))
+            let env = AppEnvironment(modelContainer: container)
+            _appEnvironment = State(initialValue: env)
+
+            // BGTask handlers **must** be registered before
+            // `applicationDidFinishLaunching` returns. SwiftUI's `App.init`
+            // runs before scene setup, which is early enough.
+            MorningBriefBackgroundTask.register(env: env)
         } catch {
             Log.app.fault("ModelContainer init failed: \(String(describing: error), privacy: .public)")
             fatalError("Could not create ModelContainer: \(error)")

@@ -36,19 +36,45 @@ struct RootView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             let biometricsEnabled = env.preferencesRepository.currentPreferences?.biometricsEnabled ?? true
-            guard biometricsEnabled else { return }
 
             switch newPhase {
             case .background:
-                env.biometricService.lock()
+                if biometricsEnabled {
+                    env.biometricService.lock()
+                }
+                // Rescheduling on every background transition keeps the
+                // BGTask chain alive — submissions are one-shot. Guarded
+                // by `firstLaunchComplete` so we never schedule against
+                // an empty portfolio during onboarding.
+                scheduleMorningBriefRefreshIfAllowed()
             case .active:
-                if env.biometricService.isLocked {
+                if biometricsEnabled && env.biometricService.isLocked {
                     Task { await env.biometricService.authenticate() }
                 }
             default:
                 break
             }
         }
+        .onChange(of: env.preferencesRepository.currentPreferences?.firstLaunchComplete) { _, completed in
+            // Schedule the very first refresh as soon as onboarding finishes.
+            if completed == true {
+                scheduleMorningBriefRefreshIfAllowed()
+            }
+        }
+        .task {
+            // Also schedule on every cold-start launch when onboarding is
+            // already complete — catches the case where prior scheduling
+            // was consumed by a BGTask firing.
+            scheduleMorningBriefRefreshIfAllowed()
+        }
+    }
+
+    /// Guarded wrapper around `MorningBriefBackgroundTask.scheduleNext()`.
+    /// The only guard is `firstLaunchComplete` — no sense scheduling a
+    /// brief when the user hasn't finished onboarding.
+    private func scheduleMorningBriefRefreshIfAllowed() {
+        guard env.preferencesRepository.currentPreferences?.firstLaunchComplete == true else { return }
+        MorningBriefBackgroundTask.scheduleNext()
     }
 }
 

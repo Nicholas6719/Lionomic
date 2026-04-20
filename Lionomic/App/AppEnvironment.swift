@@ -12,6 +12,7 @@ final class AppEnvironment {
     let historyService: HistoryService
     let marketDataService: MarketDataService
     let recommendationService: RecommendationService
+    let morningBriefService: MorningBriefService
     let keychainService = KeychainService()
     let biometricService = BiometricService()
 
@@ -32,6 +33,7 @@ final class AppEnvironment {
             marketDataService: self.marketDataService,
             profileRepository: self.profileRepository
         )
+        self.morningBriefService = MorningBriefService()
     }
 
     func seedOnFirstLaunch() {
