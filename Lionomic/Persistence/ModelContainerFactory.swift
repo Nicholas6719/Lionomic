@@ -15,6 +15,7 @@ enum ModelContainerFactory {
         CachedQuote.self,
         Recommendation.self,
         AlertEvent.self,
+        AccountOverride.self,
     ]
 
     static func makeSharedContainer(

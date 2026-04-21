@@ -16,7 +16,7 @@ nonisolated struct DipBuyRule: RecommendationRule {
     func evaluate(
         holding: Holding,
         account: Account,
-        profile: InvestingProfile,
+        profile: EffectiveProfile,
         quote: QuoteResult?
     ) -> RuleOutput? {
         guard profile.preferDipBuying else { return nil }

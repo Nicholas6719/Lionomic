@@ -62,6 +62,10 @@ final class RecommendationService {
     @discardableResult
     func generate(for account: Account) async -> [Recommendation] {
         let profile = (try? profileRepository.fetchProfile()) ?? InvestingProfile()
+        // MProfile: resolve the account-level override once per generate
+        // call and feed the merged `EffectiveProfile` into every rule.
+        let override = profileRepository.override(for: account)
+        let effective = EffectiveProfile.resolve(profile: profile, override: override)
 
         // Step 1: snapshot before destroy. Map by symbol since holdings
         // can have their IDs change across edits but symbols are stable
@@ -76,7 +80,7 @@ final class RecommendationService {
             let rec = engine.evaluate(
                 holding: holding,
                 account: account,
-                profile: profile,
+                profile: effective,
                 quote: quote
             )
             modelContext.insert(rec)

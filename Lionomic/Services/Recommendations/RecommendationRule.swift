@@ -63,13 +63,17 @@ struct RecommendationOutput: Codable, Hashable, Sendable {
 /// A single rule. Returns `nil` when it has no opinion on the holding.
 /// Implementations rely on project-default MainActor isolation so they can
 /// touch `Account.holdings` and other SwiftData relationships safely.
+///
+/// MProfile: `profile` is now an `EffectiveProfile` — the global
+/// `InvestingProfile` merged with any per-account override. Rules no
+/// longer see the raw `InvestingProfile`; they see the resolved view.
 protocol RecommendationRule {
     var name: String { get }
 
     func evaluate(
         holding: Holding,
         account: Account,
-        profile: InvestingProfile,
+        profile: EffectiveProfile,
         quote: QuoteResult?
     ) -> RuleOutput?
 }

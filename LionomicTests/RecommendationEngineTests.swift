@@ -58,7 +58,7 @@ struct RecommendationEngineTests {
         let rec = engine.evaluate(
             holding: holding,
             account: account,
-            profile: InvestingProfile(),
+            profile: .global(InvestingProfile()),
             quote: nil
         )
         #expect(rec.categoryEnum == .hold)
@@ -73,7 +73,7 @@ struct RecommendationEngineTests {
         // A fake rule that always returns .buyNow at high confidence.
         struct FakeBuyNowRule: RecommendationRule {
             let name = "FakeBuyNow"
-            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+            func evaluate(holding: Holding, account: Account, profile: EffectiveProfile, quote: QuoteResult?) -> RuleOutput? {
                 RuleOutput(ruleName: name, category: .buyNow, reasoning: "always buy", confidence: 0.9)
             }
         }
@@ -82,7 +82,7 @@ struct RecommendationEngineTests {
         let rec = engine.evaluate(
             holding: holding,
             account: account,
-            profile: InvestingProfile(),
+            profile: .global(InvestingProfile()),
             quote: nil
         )
         #expect(rec.categoryEnum == .researchMore)
@@ -93,7 +93,7 @@ struct RecommendationEngineTests {
 
         struct FakeHoldRule: RecommendationRule {
             let name = "FakeHold"
-            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+            func evaluate(holding: Holding, account: Account, profile: EffectiveProfile, quote: QuoteResult?) -> RuleOutput? {
                 RuleOutput(ruleName: name, category: .hold, reasoning: "stay put", confidence: 0.7)
             }
         }
@@ -102,7 +102,7 @@ struct RecommendationEngineTests {
         let rec = engine.evaluate(
             holding: holding,
             account: account,
-            profile: InvestingProfile(),
+            profile: .global(InvestingProfile()),
             quote: nil
         )
         #expect(rec.categoryEnum == .hold)
@@ -115,13 +115,13 @@ struct RecommendationEngineTests {
 
         struct HighConfidenceReduce: RecommendationRule {
             let name = "HighReduce"
-            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+            func evaluate(holding: Holding, account: Account, profile: EffectiveProfile, quote: QuoteResult?) -> RuleOutput? {
                 RuleOutput(ruleName: name, category: .reduce, reasoning: "too big", confidence: 0.85)
             }
         }
         struct LowConfidenceHold: RecommendationRule {
             let name = "LowHold"
-            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+            func evaluate(holding: Holding, account: Account, profile: EffectiveProfile, quote: QuoteResult?) -> RuleOutput? {
                 RuleOutput(ruleName: name, category: .hold, reasoning: "eh", confidence: 0.4)
             }
         }
@@ -130,7 +130,7 @@ struct RecommendationEngineTests {
         let rec = engine.evaluate(
             holding: holding,
             account: account,
-            profile: InvestingProfile(),
+            profile: .global(InvestingProfile()),
             quote: nil
         )
         #expect(rec.categoryEnum == .reduce)
@@ -149,19 +149,19 @@ struct RecommendationEngineTests {
 
         struct RuleA: RecommendationRule {
             let name = "RuleA"
-            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+            func evaluate(holding: Holding, account: Account, profile: EffectiveProfile, quote: QuoteResult?) -> RuleOutput? {
                 RuleOutput(ruleName: name, category: .reduce, reasoning: "A", confidence: 0.9, cautionNote: "careful-A")
             }
         }
         struct RuleB: RecommendationRule {
             let name = "RuleB"
-            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+            func evaluate(holding: Holding, account: Account, profile: EffectiveProfile, quote: QuoteResult?) -> RuleOutput? {
                 RuleOutput(ruleName: name, category: .wait, reasoning: "B", confidence: 0.6, cautionNote: "careful-B")
             }
         }
         struct RuleC: RecommendationRule {
             let name = "RuleC"
-            func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+            func evaluate(holding: Holding, account: Account, profile: EffectiveProfile, quote: QuoteResult?) -> RuleOutput? {
                 RuleOutput(ruleName: name, category: .researchMore, reasoning: "C", confidence: 0.3)
             }
         }
@@ -170,7 +170,7 @@ struct RecommendationEngineTests {
         let rec = engine.evaluate(
             holding: holding,
             account: account,
-            profile: InvestingProfile(),
+            profile: .global(InvestingProfile()),
             quote: nil
         )
 

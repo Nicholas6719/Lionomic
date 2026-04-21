@@ -5,6 +5,7 @@ struct AccountListView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var accounts: [Account] = []
     @State private var showingAddAccount = false
+    @State private var overrideSheetAccount: Account?
 
     var body: some View {
         List {
@@ -19,7 +20,17 @@ struct AccountListView: View {
                     NavigationLink {
                         HoldingListView(account: account)
                     } label: {
-                        AccountRow(account: account)
+                        AccountRow(
+                            account: account,
+                            hasOverride: env.profileRepository.override(for: account) != nil
+                        )
+                    }
+                    .contextMenu {
+                        Button {
+                            overrideSheetAccount = account
+                        } label: {
+                            Label("Account Overrides", systemImage: "slider.horizontal.3")
+                        }
                     }
                 }
             }
@@ -38,6 +49,9 @@ struct AccountListView: View {
         .sheet(isPresented: $showingAddAccount, onDismiss: loadAccounts) {
             AddAccountView()
         }
+        .sheet(item: $overrideSheetAccount, onDismiss: loadAccounts) { account in
+            AccountOverrideSheet(account: account)
+        }
     }
 
     private func loadAccounts() {
@@ -47,15 +61,28 @@ struct AccountListView: View {
 
 private struct AccountRow: View {
     let account: Account
+    let hasOverride: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(account.displayName)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(.primary)
-            Text(account.kind.displayName)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        HStack(spacing: DesignSystem.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(account.displayName)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(account.kind.displayName)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if hasOverride {
+                // MProfile: subtle accent-tint dot signalling this account
+                // has custom profile overrides applied. Accessible label
+                // makes it readable by VoiceOver.
+                Circle()
+                    .fill(Color.lionomicAccent)
+                    .frame(width: 8, height: 8)
+                    .accessibilityLabel("Account has custom profile overrides")
+            }
         }
         .padding(.vertical, 4)
     }

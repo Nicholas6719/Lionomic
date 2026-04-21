@@ -25,7 +25,7 @@ struct RecommendationAlertDiffTests {
         let name = "Stub"
         var outputsBySymbol: [String: RuleOutput] = [:]
 
-        func evaluate(holding: Holding, account: Account, profile: InvestingProfile, quote: QuoteResult?) -> RuleOutput? {
+        func evaluate(holding: Holding, account: Account, profile: EffectiveProfile, quote: QuoteResult?) -> RuleOutput? {
             outputsBySymbol[holding.symbol]
         }
     }

@@ -9,7 +9,7 @@ nonisolated struct RothLongTermBiasRule: RecommendationRule {
     func evaluate(
         holding: Holding,
         account: Account,
-        profile: InvestingProfile,
+        profile: EffectiveProfile,
         quote: QuoteResult?
     ) -> RuleOutput? {
         guard account.kind == .rothIRA else { return nil }
