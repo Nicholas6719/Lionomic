@@ -1,18 +1,18 @@
 import Foundation
 
-/// Default `AIService` wired into `AppEnvironment` in V1. Never pretends
-/// to be configured; always throws on `complete(prompt:)`. Keeps the
-/// wiring proof testable without requiring a live API key, and lets us
-/// ship the scaffold without any network code.
-///
-/// The swap to a real `AnthropicAIService` happens in `AppEnvironment`
-/// when that implementation is ready — nowhere else in the app needs to
-/// change.
+/// Fallback `AIService` used in tests and as a safety net. Never pretends
+/// to be configured; always throws on `complete(...)`. Kept in the target
+/// because `AIScaffoldTests` asserts its shape and because substituting
+/// it into `AppEnvironment` is a one-line change when debugging.
 final class NoopAIService: AIService {
 
     nonisolated init() {}
 
     nonisolated var isAvailable: Bool { false }
+
+    nonisolated func complete(system: String, messages: [AIMessage]) async throws -> String {
+        throw AIServiceError.notConfigured
+    }
 
     nonisolated func complete(prompt: String) async throws -> String {
         throw AIServiceError.notConfigured
