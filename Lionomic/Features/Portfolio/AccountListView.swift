@@ -24,6 +24,7 @@ struct AccountListView: View {
                 }
             }
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Portfolio")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -48,10 +49,13 @@ private struct AccountRow: View {
     let account: Account
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(account.displayName).font(.headline)
-            Text("\(account.holdings.count) holding\(account.holdings.count == 1 ? "" : "s")")
-                .font(.caption).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(account.displayName)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
+            Text(account.kind.displayName)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
     }

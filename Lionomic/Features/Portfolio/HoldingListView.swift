@@ -17,15 +17,23 @@ struct HoldingListView: View {
                     description: Text("Tap + to add your first holding.")
                 )
             } else {
-                ForEach(account.holdings.sorted { $0.symbol < $1.symbol }) { holding in
-                    HoldingRow(
-                        holding: holding,
-                        quote: quotes[holding.symbol],
-                        hadError: errors.contains(holding.symbol)
-                    )
+                Section {
+                    ForEach(account.holdings.sorted { $0.symbol < $1.symbol }) { holding in
+                        HoldingRow(
+                            holding: holding,
+                            quote: quotes[holding.symbol],
+                            hadError: errors.contains(holding.symbol)
+                        )
+                    }
+                } header: {
+                    Text("\(account.displayName) · \(account.kind.displayName)")
+                        .font(.footnote)
+                        .textCase(.uppercase)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
+        .listStyle(.insetGrouped)
         .navigationTitle(account.displayName)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -63,105 +71,81 @@ private struct HoldingRow: View {
     let hadError: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(holding.symbol).font(.headline)
-                Spacer()
+        HStack(alignment: .firstTextBaseline, spacing: DesignSystem.Spacing.sm) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(holding.symbol)
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.primary)
                 Text(holding.assetType.displayName)
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(.quaternary, in: Capsule())
             }
 
-            // Cost-basis / valuation line
-            if let shares = holding.shares, let cost = holding.averageCost {
-                Text("\(formatDecimal(shares)) shares @ \(formatCurrency(cost))")
-                    .font(.caption).foregroundStyle(.secondary)
-            } else if let valuation = holding.manualValuation {
-                Text("Manual valuation: \(formatCurrency(valuation))")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+            Spacer(minLength: DesignSystem.Spacing.xs)
 
-            // Live quote line (non-NFT only)
-            quoteLine
+            VStack(alignment: .trailing, spacing: 2) {
+                marketValueLine
+                gainLossLine
+            }
         }
         .padding(.vertical, 4)
     }
 
     @ViewBuilder
-    private var quoteLine: some View {
-        if !holding.assetType.usesMarketQuote {
-            // NFT — no fetch attempted.
-            EmptyView()
-        } else if let quote {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(formatCurrency(quote.price))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    if !quote.isFresh {
-                        Text("stale")
-                            .font(.caption2)
-                            .foregroundStyle(.orange)
-                    }
-                    Spacer()
-                    Text("via \(quote.providerName)")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                unrealizedGainLossLine(quote: quote)
-            }
+    private var marketValueLine: some View {
+        if let value = marketValue {
+            Text(MoneyFormatter.string(from: value))
+                .font(.body)
+                .foregroundStyle(.primary)
         } else if hadError {
             Text("Quote unavailable")
-                .font(.caption).foregroundStyle(.orange)
-        } else {
-            Text("Loading quote…")
-                .font(.caption).foregroundStyle(.tertiary)
-        }
-    }
-
-    /// M11: unrealized gain/loss beneath the quote line.
-    ///
-    /// Formula: `(quote.price - averageCost) × shares`, Decimal throughout.
-    /// Shown only when `averageCost > 0`, `shares > 0`, and the quote is
-    /// fresh. Otherwise renders "—" so the row height stays consistent
-    /// between eligible and ineligible holdings. Signed currency and
-    /// signed percent use the existing formatters — no new helpers.
-    @ViewBuilder
-    private func unrealizedGainLossLine(quote: QuoteResult) -> some View {
-        if let shares = holding.shares,
-           let cost = holding.averageCost,
-           cost > 0, shares > 0, quote.isFresh {
-            let delta = (quote.price - cost) * shares
-            let ratio = (quote.price - cost) / cost   // per-share percent, independent of shares
-            let tint: Color = {
-                if delta > 0 { return .green }
-                if delta < 0 { return .red }
-                return .secondary
-            }()
-            HStack(spacing: 4) {
-                Text(MoneyFormatter.signedString(from: delta))
-                    .font(.caption2.weight(.medium))
-                Text("(\(PercentFormatter.signedString(from: ratio)))")
-                    .font(.caption2)
-            }
-            .foregroundStyle(tint)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        } else if holding.assetType.usesMarketQuote {
+            Text("Loading…")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         } else {
             Text("—")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(.body)
+                .foregroundStyle(.secondary)
         }
     }
 
-    private func formatCurrency(_ value: Decimal) -> String { MoneyFormatter.string(from: value) }
+    @ViewBuilder
+    private var gainLossLine: some View {
+        if let shares = holding.shares,
+           let cost = holding.averageCost,
+           let quote,
+           cost > 0, shares > 0, quote.isFresh {
+            let delta = (quote.price - cost) * shares
+            let ratio = (quote.price - cost) / cost
+            let tint: Color = {
+                if delta > 0 { return .gainGreen }
+                if delta < 0 { return .lossRed }
+                return .secondary
+            }()
+            Text("\(MoneyFormatter.signedString(from: delta)) (\(PercentFormatter.signedString(from: ratio)))")
+                .font(.footnote)
+                .foregroundStyle(tint)
+        } else {
+            Text("—")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
 
-    /// Shares are not money/percent — keep a local decimal helper here.
-    private func formatDecimal(_ value: Decimal) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.maximumFractionDigits = 6
-        return f.string(from: value as NSDecimalNumber) ?? "\(value)"
+    /// Market value = shares × live price for quote-backed holdings;
+    /// `manualValuation` for NFTs. Returns `nil` while a quote is loading
+    /// or when required inputs are missing.
+    private var marketValue: Decimal? {
+        if holding.assetType.usesMarketQuote {
+            if let shares = holding.shares, let quote {
+                return shares * quote.price
+            }
+            return nil
+        } else {
+            return holding.manualValuation
+        }
     }
 }

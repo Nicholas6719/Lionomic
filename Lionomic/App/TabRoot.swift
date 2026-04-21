@@ -41,6 +41,7 @@ struct TabRoot: View {
                     .tabItem { Label("Chat", systemImage: "message") }
             }
         }
+        .tint(Color.lionomicAccent)
     }
 }
 

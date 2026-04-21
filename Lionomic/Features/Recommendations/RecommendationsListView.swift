@@ -51,10 +51,15 @@ struct RecommendationsListView: View {
         } else {
             List {
                 ForEach(groupedByAccount(), id: \.accountID) { group in
-                    Section(group.accountName) {
+                    Section {
                         ForEach(group.items) { rec in
                             RecommendationRow(recommendation: rec)
                         }
+                    } header: {
+                        Text(group.accountName)
+                            .font(.footnote)
+                            .textCase(.uppercase)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -105,66 +110,49 @@ private struct RecommendationRow: View {
     let recommendation: Recommendation
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+            HStack(spacing: DesignSystem.Spacing.xs) {
                 Text(recommendation.symbol)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.body.weight(.bold))
                 RecommendationCategoryBadge(category: recommendation.categoryEnum)
                 Spacer()
-                Text(PercentFormatter.string(from: Decimal(recommendation.confidence), fractionDigits: 0))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                ConfidencePipsView(confidence: recommendation.confidence)
             }
 
-            ConfidenceBar(value: recommendation.confidence)
-
             Text(recommendation.reasoning)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.body)
+                .foregroundStyle(.primary)
 
             if !recommendation.cautionNote.isEmpty {
                 Label(recommendation.cautionNote, systemImage: "exclamationmark.triangle")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             // M11: surface the M8 structured supporting outputs. Collapsed
             // by default — most users only want the winning rule's story.
             if !recommendation.supportingOutputs.isEmpty {
-                DisclosureGroup("Also considered") {
+                DisclosureGroup {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(recommendation.supportingOutputs, id: \.self) { output in
-                            HStack(alignment: .top, spacing: 8) {
+                            HStack(alignment: .top, spacing: DesignSystem.Spacing.xs) {
                                 RecommendationCategoryBadge(category: output.category)
                                 Text(output.reasoning)
-                                    .font(.caption)
+                                    .font(.footnote)
                                     .foregroundStyle(.secondary)
                                 Spacer(minLength: 0)
                             }
                         }
                     }
                     .padding(.top, 4)
+                } label: {
+                    Text("Also considered")
+                        .font(.footnote)
+                        .textCase(.uppercase)
+                        .foregroundStyle(.secondary)
                 }
-                .font(.caption)
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-private struct ConfidenceBar: View {
-    let value: Double
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.15))
-                Capsule()
-                    .fill(.tint)
-                    .frame(width: proxy.size.width * CGFloat(max(0, min(1, value))))
-            }
-        }
-        .frame(height: 4)
     }
 }

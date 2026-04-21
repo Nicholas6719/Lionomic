@@ -69,35 +69,35 @@ private struct HighlightRow: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.symbol)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.body.weight(.bold))
                 Text(item.assetType.displayName)
-                    .font(.caption2)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             Spacer()
             if !item.assetType.usesMarketQuote {
                 Text("Manual")
-                    .font(.caption).foregroundStyle(.tertiary)
+                    .font(.footnote).foregroundStyle(.tertiary)
             } else if let quote {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(MoneyFormatter.string(from: quote.price))
-                        .font(.subheadline.weight(.medium))
+                        .font(.body)
                     if quote.change != 0 || quote.changePercent != 0 {
                         Text(PercentFormatter.signedString(from: quote.changePercent))
-                            .font(.caption2)
+                            .font(.footnote)
                             .foregroundStyle(color(for: quote.change))
                     }
                 }
             } else {
                 Text("…")
-                    .font(.caption).foregroundStyle(.tertiary)
+                    .font(.footnote).foregroundStyle(.tertiary)
             }
         }
     }
 
     private func color(for change: Decimal) -> Color {
-        if change > 0 { return .green }
-        if change < 0 { return .red }
+        if change > 0 { return .gainGreen }
+        if change < 0 { return .lossRed }
         return .secondary
     }
 }

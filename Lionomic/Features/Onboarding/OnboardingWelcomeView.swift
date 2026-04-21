@@ -5,34 +5,44 @@ struct OnboardingWelcomeView: View {
     let viewModel: OnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: DesignSystem.Spacing.lg) {
             Spacer()
 
             Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
                 .font(.system(size: 80))
-                .foregroundStyle(.tint)
+                .foregroundStyle(Color.lionomicAccent)
 
-            VStack(spacing: 12) {
+            VStack(spacing: DesignSystem.Spacing.sm) {
                 Text("Welcome to Lionomic")
-                    .font(.largeTitle.weight(.bold))
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text("Your private, local-first investing guide.\nAll your data stays on this device.")
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
             Spacer()
 
-            Button("Get Started") {
+            Button {
                 viewModel.advanceFromWelcome()
+            } label: {
+                Text("Get Started")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignSystem.Radius.card, style: .continuous)
+                            .fill(Color.lionomicAccent)
+                    )
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.bottom, 32)
+            .padding(.bottom, DesignSystem.Spacing.lg)
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, DesignSystem.Spacing.lg)
         .navigationBarHidden(true)
     }
 }
