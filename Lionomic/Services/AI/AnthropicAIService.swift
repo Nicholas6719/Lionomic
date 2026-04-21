@@ -36,7 +36,14 @@ final class AnthropicAIService: AIService {
         self.staticApiKey = apiKey
     }
 
-    private var currentKey: String {
+    /// Key-reading path. Marked `nonisolated` because both `isAvailable`
+    /// and `complete(system:messages:)` are `nonisolated` and need to
+    /// read it. Under `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` a
+    /// computed property without an explicit isolation annotation
+    /// defaults to MainActor, which Swift 6 mode rejects when called
+    /// from a nonisolated context. Every dependency it touches
+    /// (`staticApiKey` / `keychainService.load`) is Sendable + nonisolated.
+    private nonisolated var currentKey: String {
         if let staticApiKey { return staticApiKey }
         return keychainService?.load(identifier: KeychainService.anthropicApiKeyIdentifier) ?? ""
     }
@@ -112,24 +119,31 @@ final class AnthropicAIService: AIService {
     }
 
     // MARK: - Wire types
+    //
+    // Every nested struct is `nonisolated` because they are constructed,
+    // encoded, and decoded from inside `complete(system:messages:)`,
+    // which is `nonisolated`. Without the annotation they inherit
+    // MainActor isolation from the project-wide default, making their
+    // `Encodable` / `Decodable` conformances MainActor-isolated — Swift 6
+    // rejects using those conformances from non-MainActor contexts.
 
-    private struct RequestBody: Encodable {
+    private nonisolated struct RequestBody: Encodable {
         let model: String
         let max_tokens: Int
         let system: String?
         let messages: [RequestMessage]
     }
 
-    private struct RequestMessage: Encodable {
+    private nonisolated struct RequestMessage: Encodable {
         let role: String
         let content: String
     }
 
-    private struct ResponseEnvelope: Decodable {
+    private nonisolated struct ResponseEnvelope: Decodable {
         let content: [ContentBlock]
     }
 
-    private struct ContentBlock: Decodable {
+    private nonisolated struct ContentBlock: Decodable {
         let type: String
         let text: String
     }
