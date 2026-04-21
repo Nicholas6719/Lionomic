@@ -34,7 +34,7 @@ struct RecommendationsCard: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
         } else {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
                 ForEach(top) { rec in
                     TopRow(recommendation: rec)
                     if rec.id != top.last?.id { Divider() }
@@ -43,7 +43,7 @@ struct RecommendationsCard: View {
                     RecommendationsListView()
                 } label: {
                     Text("See all")
-                        .font(.caption.weight(.medium))
+                        .font(.footnote.weight(.medium))
                 }
                 .padding(.top, 4)
             }
@@ -61,17 +61,18 @@ private struct TopRow: View {
     let recommendation: Recommendation
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: DesignSystem.Spacing.sm) {
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
+                HStack(spacing: DesignSystem.Spacing.xs) {
                     Text(recommendation.symbol)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.body.weight(.bold))
                     RecommendationCategoryBadge(category: recommendation.categoryEnum)
                 }
                 Text(recommendation.reasoning)
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                ConfidencePipsView(confidence: recommendation.confidence)
             }
             Spacer(minLength: 0)
         }

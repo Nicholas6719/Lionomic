@@ -10,7 +10,7 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            Section("Preferences") {
+            Section {
                 NavigationLink {
                     EditProfileView()
                 } label: {
@@ -22,17 +22,21 @@ struct SettingsView: View {
                 } label: {
                     Label("App Preferences", systemImage: "slider.horizontal.3")
                 }
+            } header: {
+                sectionHeader("Preferences")
             }
 
-            Section("Security") {
+            Section {
                 NavigationLink {
                     BiometricsSettingsView()
                 } label: {
                     Label("Biometrics & Lock", systemImage: "faceid")
                 }
+            } header: {
+                sectionHeader("Security")
             }
 
-            Section("Market Data") {
+            Section {
                 NavigationLink {
                     ApiKeysView()
                 } label: {
@@ -44,20 +48,27 @@ struct SettingsView: View {
                 } label: {
                     Label("Provider Status", systemImage: "antenna.radiowaves.left.and.right")
                 }
+            } header: {
+                sectionHeader("Market Data")
             }
 
-            Section("About") {
+            Section {
                 LabeledContent("Version", value: appVersion)
+            } header: {
+                sectionHeader("About")
             }
 
-            Section("Danger Zone") {
+            Section {
                 Button(role: .destructive) {
                     showingResetStage1 = true
                 } label: {
                     Label("Reset All Data", systemImage: "trash")
                 }
+            } header: {
+                sectionHeader("Danger Zone")
             }
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Settings")
         .confirmationDialog(
             "Reset all data?",
@@ -83,6 +94,13 @@ struct SettingsView: View {
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.footnote)
+            .textCase(.uppercase)
+            .foregroundStyle(.secondary)
     }
 }
 

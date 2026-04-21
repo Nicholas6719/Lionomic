@@ -8,13 +8,14 @@ import SwiftData
 struct DashboardView: View {
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: DesignSystem.Spacing.sm) {
                 PortfolioSummaryCard()
                 WatchlistHighlightsCard()
                 MorningBriefCard()
                 RecommendationsCard()
             }
-            .padding(16)
+            .padding(.horizontal, DesignSystem.Spacing.md)
+            .padding(.vertical, DesignSystem.Spacing.md)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Dashboard")

@@ -56,6 +56,9 @@ struct WatchlistListView: View {
                 } header: {
                     HStack {
                         Text(kind.displayName)
+                            .font(.footnote)
+                            .textCase(.uppercase)
+                            .foregroundStyle(.secondary)
                         Spacer()
                         Button {
                             addingTo = kind
@@ -67,6 +70,7 @@ struct WatchlistListView: View {
                 }
             }
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Watchlists")
         .task {
             await reload()

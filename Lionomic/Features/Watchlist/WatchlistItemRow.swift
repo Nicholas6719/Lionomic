@@ -2,11 +2,9 @@ import SwiftUI
 
 /// A single watchlist row.
 ///
-/// Shows: symbol, asset type badge, live price, change / %change, alerts indicator,
-/// target-buy-below pill when set. NFT rows render only symbol + asset badge +
-/// optional valuation note — no quote fetch.
-///
-/// Matches the loading / fresh / stale / error state pattern used by `HoldingListView`.
+/// Shows: symbol + asset-kind label (left), current price + signed change
+/// (right). Bell icon appears when alerts are enabled; target pill below
+/// when set. NFT rows skip the quote fetch and render a manual label.
 struct WatchlistItemRow: View {
 
     let item: WatchlistItem
@@ -14,35 +12,36 @@ struct WatchlistItemRow: View {
     let hadError: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Header line: symbol + badges
-            HStack(spacing: 8) {
-                Text(item.symbol).font(.headline)
-
-                if item.alertsEnabled {
-                    Image(systemName: "bell.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.tint)
-                        .accessibilityLabel("Alerts enabled")
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: DesignSystem.Spacing.sm) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(item.symbol)
+                            .font(.body.weight(.bold))
+                            .foregroundStyle(.primary)
+                        if item.alertsEnabled {
+                            Image(systemName: "bell.fill")
+                                .font(.caption2)
+                                .foregroundStyle(Color.lionomicAccent)
+                                .accessibilityLabel("Alerts enabled")
+                        }
+                    }
+                    Text(item.assetType.displayName)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
-                Spacer()
+                Spacer(minLength: DesignSystem.Spacing.xs)
 
-                Text(item.assetType.displayName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(.quaternary, in: Capsule())
+                VStack(alignment: .trailing, spacing: 2) {
+                    priceLine
+                    changeLine
+                }
             }
 
-            // Quote line (non-NFT) or static label (NFT)
-            quoteLine
-
-            // Target pill — only meaningful for symbols with live quotes
             if let target = item.targetBuyBelow, item.assetType.usesMarketQuote {
-                Text("Target: buy below \(formatCurrency(target))")
-                    .font(.caption2)
+                Text("Target: buy below \(MoneyFormatter.string(from: target))")
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
@@ -50,58 +49,43 @@ struct WatchlistItemRow: View {
     }
 
     @ViewBuilder
-    private var quoteLine: some View {
+    private var priceLine: some View {
         if !item.assetType.usesMarketQuote {
-            Text("Manual valuation only — no live quote.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            Text("Manual")
+                .font(.body)
+                .foregroundStyle(.secondary)
         } else if let quote {
-            HStack(spacing: 8) {
-                Text(formatCurrency(quote.price))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                if quote.change != 0 || quote.changePercent != 0 {
-                    Text(formatChange(quote.change))
-                        .font(.caption)
-                        .foregroundStyle(changeColor(for: quote.change))
-                    Text(formatPercent(quote.changePercent))
-                        .font(.caption)
-                        .foregroundStyle(changeColor(for: quote.change))
-                }
-
-                if !quote.isFresh {
-                    Text("stale")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-
-                Spacer()
-
-                Text("via \(quote.providerName)")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
+            Text(MoneyFormatter.string(from: quote.price))
+                .font(.body)
+                .foregroundStyle(.primary)
         } else if hadError {
             Text("Quote unavailable")
-                .font(.caption)
-                .foregroundStyle(.orange)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         } else {
-            Text("Loading quote…")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            Text("Loading…")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 
-    // MARK: - Formatting
-
-    private func changeColor(for value: Decimal) -> Color {
-        if value > 0 { return .green }
-        if value < 0 { return .red }
-        return .secondary
+    @ViewBuilder
+    private var changeLine: some View {
+        if let quote, item.assetType.usesMarketQuote,
+           quote.change != 0 || quote.changePercent != 0 {
+            Text("\(MoneyFormatter.signedString(from: quote.change)) (\(PercentFormatter.signedString(from: quote.changePercent)))")
+                .font(.footnote)
+                .foregroundStyle(changeColor(for: quote.change))
+        } else if item.assetType.usesMarketQuote, quote != nil {
+            Text("—")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
     }
 
-    private func formatCurrency(_ value: Decimal) -> String { MoneyFormatter.string(from: value) }
-    private func formatChange(_ value: Decimal) -> String   { MoneyFormatter.signedString(from: value) }
-    private func formatPercent(_ ratio: Decimal) -> String  { PercentFormatter.signedString(from: ratio) }
+    private func changeColor(for value: Decimal) -> Color {
+        if value > 0 { return .gainGreen }
+        if value < 0 { return .lossRed }
+        return .secondary
+    }
 }

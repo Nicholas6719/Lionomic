@@ -46,12 +46,13 @@ struct PortfolioSummaryCard: View {
             .padding(.vertical, 8)
         } else {
             let totals = PortfolioValuation.totals(for: accounts, quoteFor: { freshQuotes[$0] })
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 Text("Total Value")
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                 Text(MoneyFormatter.string(from: totals.total))
-                    .font(.system(size: 32, weight: .semibold, design: .rounded))
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
                     .contentTransition(.numericText())
 
                 Divider().padding(.vertical, 4)

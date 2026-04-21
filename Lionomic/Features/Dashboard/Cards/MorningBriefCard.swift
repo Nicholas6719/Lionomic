@@ -32,21 +32,21 @@ struct MorningBriefCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } else if let brief {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                 Text(brief.narrativeSummary)
-                    .font(.subheadline)
+                    .font(.body)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let note = brief.portfolioChangeNote {
                     Text(note)
-                        .font(.caption)
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 
                 HStack {
                     Text("Updated \(brief.generatedAt.formatted(date: .omitted, time: .shortened))")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     Spacer()
                     Button {
                         Task { await regenerate() }

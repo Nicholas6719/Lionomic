@@ -10,7 +10,10 @@ struct RecommendationCategoryBadge: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(category.badgeColor.opacity(0.18), in: Capsule())
+            .background(
+                category.badgeColor.opacity(0.18),
+                in: RoundedRectangle(cornerRadius: DesignSystem.Radius.badge, style: .continuous)
+            )
             .foregroundStyle(category.badgeColor)
     }
 }
