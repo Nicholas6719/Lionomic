@@ -66,6 +66,14 @@ final class InvestingProfile {
     var cautionBias: CautionBias
     var updatedAt: Date
 
+    /// MProfile: per-account overrides that replace selected profile
+    /// fields when the recommendation engine evaluates holdings in that
+    /// account. The inline `= []` default lets SwiftData lightweight-
+    /// migrate existing rows — required for non-Optional relationship
+    /// properties.
+    @Relationship(deleteRule: .cascade)
+    var accountOverrides: [AccountOverride] = []
+
     init(
         riskTolerance: RiskTolerance = .moderate,
         horizonPreference: HorizonPreference = .balanced,

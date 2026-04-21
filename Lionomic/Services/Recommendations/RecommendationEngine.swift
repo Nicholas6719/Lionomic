@@ -37,7 +37,7 @@ nonisolated struct RecommendationEngine {
     func evaluate(
         holding: Holding,
         account: Account,
-        profile: InvestingProfile,
+        profile: EffectiveProfile,
         quote: QuoteResult?,
         at date: Date = .now
     ) -> Recommendation {

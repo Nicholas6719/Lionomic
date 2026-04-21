@@ -13,7 +13,7 @@ nonisolated struct OverconcentrationRule: RecommendationRule {
     func evaluate(
         holding: Holding,
         account: Account,
-        profile: InvestingProfile,
+        profile: EffectiveProfile,
         quote: QuoteResult?
     ) -> RuleOutput? {
         let thresholdRatio = Self.threshold(for: profile.concentrationSensitivity)

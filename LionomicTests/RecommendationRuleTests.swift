@@ -72,7 +72,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: account,
-            profile: InvestingProfile(),
+            profile: .global(InvestingProfile()),
             quote: nil
         )
         #expect(output != nil)
@@ -87,7 +87,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: account,
-            profile: InvestingProfile(),
+            profile: .global(InvestingProfile()),
             quote: nil
         )
         #expect(output == nil)
@@ -103,7 +103,7 @@ struct RecommendationRuleTests {
             manualValuation: 1000
         ))
         let rule = InsufficientDataRule()
-        #expect(rule.evaluate(holding: holding, account: account, profile: InvestingProfile(), quote: nil) == nil)
+        #expect(rule.evaluate(holding: holding, account: account, profile: .global(InvestingProfile()), quote: nil) == nil)
     }
 
     // MARK: - OverconcentrationRule
@@ -118,7 +118,7 @@ struct RecommendationRuleTests {
 
         let profile = InvestingProfile(concentrationSensitivity: .medium)
         let rule = OverconcentrationRule()
-        let output = rule.evaluate(holding: big, account: account, profile: profile, quote: nil)
+        let output = rule.evaluate(holding: big, account: account, profile: .global(profile), quote: nil)
         #expect(output?.category == .reduce)
         #expect((output?.confidence ?? 0) > 0.6)
     }
@@ -136,7 +136,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: target,
             account: account,
-            profile: InvestingProfile(concentrationSensitivity: .medium),
+            profile: .global(InvestingProfile(concentrationSensitivity: .medium)),
             quote: nil
         )
         // 20% is equal to threshold; rule fires only when > threshold, so we expect nil.
@@ -156,7 +156,7 @@ struct RecommendationRuleTests {
         let low = rule.evaluate(
             holding: target,
             account: account,
-            profile: InvestingProfile(concentrationSensitivity: .low),
+            profile: .global(InvestingProfile(concentrationSensitivity: .low)),
             quote: nil
         )
         // 25% < 30% — should NOT fire at low sensitivity
@@ -165,7 +165,7 @@ struct RecommendationRuleTests {
         let high = rule.evaluate(
             holding: target,
             account: account,
-            profile: InvestingProfile(concentrationSensitivity: .high),
+            profile: .global(InvestingProfile(concentrationSensitivity: .high)),
             quote: nil
         )
         // 25% > 15% — should fire at high sensitivity
@@ -183,7 +183,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: account,
-            profile: profile,
+            profile: .global(profile),
             quote: quote(changePercent: -0.05)   // -5%
         )
         #expect(output?.category == .buyNow)
@@ -198,7 +198,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: account,
-            profile: profile,
+            profile: .global(profile),
             quote: quote(changePercent: -0.05)
         )
         #expect(output?.category == .wait)
@@ -213,7 +213,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: account,
-            profile: profile,
+            profile: .global(profile),
             quote: quote(changePercent: -0.05)
         )
         #expect(output == nil)
@@ -228,7 +228,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: account,
-            profile: profile,
+            profile: .global(profile),
             quote: quote(changePercent: -0.01)   // -1%, above threshold
         )
         #expect(output == nil)
@@ -244,7 +244,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: account,
-            profile: InvestingProfile(),
+            profile: .global(InvestingProfile()),
             quote: quote(changePercent: 0.07)   // +7%
         )
         #expect(output?.category == .wait)
@@ -257,11 +257,11 @@ struct RecommendationRuleTests {
         let holding = try makeHolding(repo, account: account, symbol: "AAPL")
         let rule = NoChaseRule()
         let flat = rule.evaluate(
-            holding: holding, account: account, profile: InvestingProfile(),
+            holding: holding, account: account, profile: .global(InvestingProfile()),
             quote: quote(changePercent: 0)
         )
         let down = rule.evaluate(
-            holding: holding, account: account, profile: InvestingProfile(),
+            holding: holding, account: account, profile: .global(InvestingProfile()),
             quote: quote(changePercent: -0.02)
         )
         #expect(flat == nil)
@@ -279,7 +279,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: rothAccount,
-            profile: profile,
+            profile: .global(profile),
             quote: nil
         )
         #expect(output?.category == .hold)
@@ -294,7 +294,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: brokerage,
-            profile: profile,
+            profile: .global(profile),
             quote: nil
         )
         #expect(output == nil)
@@ -309,7 +309,7 @@ struct RecommendationRuleTests {
         let output = rule.evaluate(
             holding: holding,
             account: rothAccount,
-            profile: profile,
+            profile: .global(profile),
             quote: nil
         )
         #expect(output == nil)

@@ -66,4 +66,70 @@ final class ProfileRepository {
         try modelContext.save()
         return new
     }
+
+    // MARK: - Per-account overrides (MProfile)
+
+    /// Returns the existing `AccountOverride` for `account`, or nil.
+    /// Reads through the global InvestingProfile's `accountOverrides`
+    /// relationship so the query stays inside SwiftData's object graph
+    /// rather than issuing a separate predicate fetch.
+    func override(for account: Account) -> AccountOverride? {
+        let profile = (try? fetchProfile()) ?? nil
+        let accountID = account.id
+        return profile?.accountOverrides.first { $0.accountID == accountID }
+    }
+
+    /// Upserts a per-account override. If all three override fields are
+    /// nil, the existing override (if any) is deleted rather than
+    /// persisted — a no-op override would be wasteful storage and would
+    /// show up as "has override" in the UI indicator without changing
+    /// any effective profile field.
+    ///
+    /// Requires the global `InvestingProfile` to exist. If there's no
+    /// profile yet the call is a silent no-op (onboarding creates the
+    /// profile before the user could reach this surface).
+    func setOverride(
+        for account: Account,
+        riskTolerance: RiskTolerance?,
+        horizonPreference: HorizonPreference?,
+        cautionBias: CautionBias?
+    ) throws {
+        // Collapse no-op overrides into a delete.
+        if riskTolerance == nil && horizonPreference == nil && cautionBias == nil {
+            try clearOverride(for: account)
+            return
+        }
+
+        guard let profile = try fetchProfile() else { return }
+        let accountID = account.id
+
+        if let existing = profile.accountOverrides.first(where: { $0.accountID == accountID }) {
+            existing.riskTolerance = riskTolerance
+            existing.horizonPreference = horizonPreference
+            existing.cautionBias = cautionBias
+        } else {
+            let new = AccountOverride(
+                accountID: accountID,
+                riskTolerance: riskTolerance,
+                horizonPreference: horizonPreference,
+                cautionBias: cautionBias
+            )
+            // Inserting into the relationship collection is how SwiftData
+            // wires the inverse link + the cascade-delete chain.
+            profile.accountOverrides.append(new)
+            modelContext.insert(new)
+        }
+        try modelContext.save()
+    }
+
+    /// Removes the `AccountOverride` for `account`, if one exists.
+    func clearOverride(for account: Account) throws {
+        guard let profile = try fetchProfile() else { return }
+        let accountID = account.id
+        guard let existing = profile.accountOverrides.first(where: { $0.accountID == accountID }) else {
+            return
+        }
+        modelContext.delete(existing)
+        try modelContext.save()
+    }
 }

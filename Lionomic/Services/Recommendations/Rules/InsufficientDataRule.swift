@@ -8,7 +8,7 @@ nonisolated struct InsufficientDataRule: RecommendationRule {
     func evaluate(
         holding: Holding,
         account: Account,
-        profile: InvestingProfile,
+        profile: EffectiveProfile,
         quote: QuoteResult?
     ) -> RuleOutput? {
         guard holding.assetType.usesMarketQuote else { return nil }
