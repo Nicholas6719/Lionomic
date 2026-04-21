@@ -46,9 +46,9 @@ struct ApiKeysView: View {
                     onDelete: { viewModel.deleteAnthropicKey() }
                 )
             } header: {
-                Text("AI (Coming Soon)")
+                Text("Anthropic")
             } footer: {
-                Text("Reserved for a future AI-powered Chat feature. Saving a key has no effect in this release — it is stored securely in the Keychain for later.")
+                Text("Powers the in-app Chat tab. Get a key at console.anthropic.com. Stored securely in the Keychain, never synced or shared.")
             }
 
             Section {

@@ -30,11 +30,15 @@ struct AIScaffoldTests {
         #expect(AnthropicAIService(apiKey: "").isAvailable == false)
     }
 
-    @Test func anthropicStubThrowsNotConfigured() async throws {
-        let service = AnthropicAIService(apiKey: "test")
+    @Test func anthropicThrowsNotConfiguredWhenKeyEmpty() async throws {
+        // MChat: the empty-key path still short-circuits with
+        // `.notConfigured` before any HTTP attempt. Non-empty keys now go
+        // to the network, so we cannot exercise that path deterministically
+        // in a unit test.
+        let service = AnthropicAIService(apiKey: "")
         do {
             _ = try await service.complete(prompt: "anything")
-            Issue.record("Expected AnthropicAIService.complete to throw in V1")
+            Issue.record("Expected AnthropicAIService.complete to throw when no key is configured")
         } catch let error as AIServiceError {
             #expect(error == .notConfigured)
         }
@@ -43,7 +47,9 @@ struct AIScaffoldTests {
     @Test func appEnvironmentExposesAIService() async throws {
         let container = try ModelContainerFactory.makeSharedContainer(isStoredInMemoryOnly: true)
         let env = AppEnvironment(modelContainer: container)
-        // In V1 AppEnvironment always wires NoopAIService — isAvailable must be false.
-        #expect(env.aiService.isAvailable == false)
+        // MChat: AppEnvironment now wires an AnthropicAIService (not
+        // NoopAIService). `isAvailable` depends on the runtime Keychain
+        // state, so we only assert the type of the wired service here.
+        #expect(env.aiService is AnthropicAIService)
     }
 }

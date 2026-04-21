@@ -21,7 +21,7 @@ final class AppPreferences {
     /// Inline default is required for SwiftData lightweight migration —
     /// rows persisted before M10 have no value for this column and the
     /// migrator reads the property-level default. Don't remove it.
-    var chatEnabled: Bool = false
+    var chatEnabled: Bool = true
     var updatedAt: Date
 
     init(
@@ -35,7 +35,7 @@ final class AppPreferences {
         watchlistAlertsEnabled: Bool = false,
         holdingRiskAlertsEnabled: Bool = false,
         recommendationChangeAlertsEnabled: Bool = false,
-        chatEnabled: Bool = false,
+        chatEnabled: Bool = true,
         updatedAt: Date = Date()
     ) {
         self.morningBriefHour = morningBriefHour

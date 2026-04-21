@@ -37,8 +37,15 @@ struct TabRoot: View {
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
 
             if chatEnabled {
-                NavigationStack { ChatPlaceholderView() }
-                    .tabItem { Label("Chat", systemImage: "message") }
+                NavigationStack {
+                    ChatView(viewModel: ChatViewModel(
+                        aiService: env.aiService,
+                        profileRepository: env.profileRepository,
+                        portfolioRepository: env.portfolioRepository,
+                        watchlistRepository: env.watchlistRepository
+                    ))
+                }
+                .tabItem { Label("Chat", systemImage: "message") }
             }
         }
         .tint(Color.lionomicAccent)
