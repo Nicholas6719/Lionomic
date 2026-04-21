@@ -15,6 +15,14 @@ final class Holding {
     var createdAt: Date
     var updatedAt: Date
 
+    /// MAlerts2: fire a `.priceAlert` when the quote crosses above this
+    /// value. Nil = no upper threshold. Optional SwiftData property —
+    /// lightweight migration, no schema bump.
+    var alertAbovePrice: Decimal?
+    /// MAlerts2: fire a `.priceAlert` when the quote crosses below this
+    /// value. Nil = no lower threshold.
+    var alertBelowPrice: Decimal?
+
     init(
         id: UUID = UUID(),
         account: Account,
@@ -26,7 +34,9 @@ final class Holding {
         valuationUpdatedAt: Date? = nil,
         notes: String = "",
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        alertAbovePrice: Decimal? = nil,
+        alertBelowPrice: Decimal? = nil
     ) {
         self.id = id
         self.account = account
@@ -39,6 +49,8 @@ final class Holding {
         self.notes = notes
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.alertAbovePrice = alertAbovePrice
+        self.alertBelowPrice = alertBelowPrice
     }
 
     static func normalize(symbol: String) -> String {

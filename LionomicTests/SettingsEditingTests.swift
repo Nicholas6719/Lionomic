@@ -56,7 +56,6 @@ struct SettingsEditingTests {
         draft.watchlistAlertsEnabled = false
         draft.holdingRiskAlertsEnabled = true
         draft.recommendationChangeAlertsEnabled = true
-        draft.contextualHelpEnabled = false
 
         try env.preferencesRepository.commit(draft: draft)
 
@@ -68,7 +67,9 @@ struct SettingsEditingTests {
         #expect(stored.watchlistAlertsEnabled == false)
         #expect(stored.holdingRiskAlertsEnabled == true)
         #expect(stored.recommendationChangeAlertsEnabled == true)
-        #expect(stored.contextualHelpEnabled == false)
+        // contextualHelpEnabled removed from DraftPreferences in MAlerts2;
+        // the model property is retained (Reserved) but is no longer part
+        // of the draft/commit surface.
     }
 
     // MARK: - Reset

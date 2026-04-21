@@ -19,6 +19,11 @@ struct WatchlistListView: View {
     // UI flags
     @State private var addingTo: WatchlistKind?
     @State private var pendingDelete: WatchlistItem?
+    @State private var alertSheetItem: WatchlistItem?
+
+    private var watchlistAlertsFeatureOn: Bool {
+        env.preferencesRepository.currentPreferences?.watchlistAlertsEnabled == true
+    }
 
     var body: some View {
         List {
@@ -50,6 +55,12 @@ struct WatchlistListView: View {
                                 } label: {
                                     Label("Remove", systemImage: "trash")
                                 }
+                                Button {
+                                    alertSheetItem = item
+                                } label: {
+                                    Label("Alerts", systemImage: "bell.badge")
+                                }
+                                .tint(Color.lionomicAccent)
                             }
                         }
                     }
@@ -80,6 +91,18 @@ struct WatchlistListView: View {
         }
         .sheet(item: $addingTo, onDismiss: { Task { await reload() } }) { kind in
             AddWatchlistItemView(watchlistKind: kind)
+        }
+        .sheet(item: $alertSheetItem) { item in
+            PriceAlertSheet(
+                symbol: item.symbol,
+                initialAbove: item.alertAbovePrice,
+                initialBelow: item.alertBelowPrice,
+                alertsFeatureEnabled: watchlistAlertsFeatureOn
+            ) { above, below in
+                try? env.watchlistRepository.setAlertThresholds(
+                    for: item, above: above, below: below
+                )
+            }
         }
         .confirmationDialog(
             "Remove from watchlist?",

@@ -7,6 +7,11 @@ struct HoldingListView: View {
     @State private var showingAddHolding = false
     @State private var quotes: [String: QuoteResult] = [:]
     @State private var errors: Set<String> = []
+    @State private var alertSheetHolding: Holding?
+
+    private var priceAlertsFeatureOn: Bool {
+        env.preferencesRepository.currentPreferences?.priceAlertsEnabled == true
+    }
 
     var body: some View {
         List {
@@ -24,6 +29,14 @@ struct HoldingListView: View {
                             quote: quotes[holding.symbol],
                             hadError: errors.contains(holding.symbol)
                         )
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button {
+                                alertSheetHolding = holding
+                            } label: {
+                                Label("Alerts", systemImage: "bell.badge")
+                            }
+                            .tint(Color.lionomicAccent)
+                        }
                     }
                 } header: {
                     Text("\(account.displayName) · \(account.kind.displayName)")
@@ -45,6 +58,18 @@ struct HoldingListView: View {
         }
         .sheet(isPresented: $showingAddHolding) {
             AddHoldingView(account: account)
+        }
+        .sheet(item: $alertSheetHolding) { holding in
+            PriceAlertSheet(
+                symbol: holding.symbol,
+                initialAbove: holding.alertAbovePrice,
+                initialBelow: holding.alertBelowPrice,
+                alertsFeatureEnabled: priceAlertsFeatureOn
+            ) { above, below in
+                try? env.portfolioRepository.setAlertThresholds(
+                    for: holding, above: above, below: below
+                )
+            }
         }
         .task(id: account.id) {
             await loadQuotes()

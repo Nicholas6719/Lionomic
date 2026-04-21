@@ -212,6 +212,23 @@ final class PortfolioRepository {
         try modelContext.save()
     }
 
+    // MARK: - Price alert thresholds (MAlerts2)
+
+    /// Sets (or clears, via `nil`) the above/below price alert thresholds
+    /// on a `Holding`. Persists immediately. No review step — alert
+    /// thresholds are small scalar edits, not a whole-holding mutation,
+    /// and the entry sheet already confirms on Save.
+    func setAlertThresholds(
+        for holding: Holding,
+        above: Decimal?,
+        below: Decimal?
+    ) throws {
+        holding.alertAbovePrice = above
+        holding.alertBelowPrice = below
+        holding.updatedAt = Date()
+        try modelContext.save()
+    }
+
     // MARK: - Private
 
     private func apply(_ draft: DraftHolding, to holding: Holding) {

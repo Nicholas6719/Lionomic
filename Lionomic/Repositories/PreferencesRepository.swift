@@ -11,7 +11,6 @@ struct DraftPreferences: Hashable {
     var morningBriefMinute: Int
     var quoteRefreshCadenceMinutes: Int
     var biometricsEnabled: Bool
-    var contextualHelpEnabled: Bool
 
     var priceAlertsEnabled: Bool
     var watchlistAlertsEnabled: Bool
@@ -24,7 +23,6 @@ struct DraftPreferences: Hashable {
         morningBriefMinute                = prefs.morningBriefMinute
         quoteRefreshCadenceMinutes        = prefs.quoteRefreshCadenceMinutes
         biometricsEnabled                 = prefs.biometricsEnabled
-        contextualHelpEnabled             = prefs.contextualHelpEnabled
         priceAlertsEnabled                = prefs.priceAlertsEnabled
         watchlistAlertsEnabled            = prefs.watchlistAlertsEnabled
         holdingRiskAlertsEnabled          = prefs.holdingRiskAlertsEnabled
@@ -33,22 +31,17 @@ struct DraftPreferences: Hashable {
 
     /// First-run defaults.
     ///
-    /// **All seven defaults below must stay in sync with the
-    /// `AppPreferences` model initializer.** That model is the canonical
-    /// source of first-launch state because `PreferencesRepository.load()`
-    /// creates the record via `AppPreferences()`, never via this Draft
-    /// initializer. Any drift is silent but observable — users would see
-    /// editor values that were never actually applied at launch. Covered
-    /// here: `morningBriefHour` / `morningBriefMinute` /
-    /// `quoteRefreshCadenceMinutes` plus the four alert bools. The two
-    /// remaining fields (`biometricsEnabled`, `contextualHelpEnabled`)
-    /// already match the model and don't need special attention.
+    /// **All defaults below must stay in sync with the `AppPreferences`
+    /// model initializer.** That model is the canonical source of
+    /// first-launch state because `PreferencesRepository.load()` creates
+    /// the record via `AppPreferences()`, never via this Draft initializer.
+    /// `contextualHelpEnabled` lives on the model but not here — it has
+    /// no active call sites, so it is not user-editable.
     init() {
         morningBriefHour                  = 7
         morningBriefMinute                = 15
         quoteRefreshCadenceMinutes        = 5
         biometricsEnabled                 = true
-        contextualHelpEnabled             = true
         priceAlertsEnabled                = false
         watchlistAlertsEnabled            = false
         holdingRiskAlertsEnabled          = false
@@ -115,7 +108,6 @@ final class PreferencesRepository {
         prefs.morningBriefMinute                = draft.morningBriefMinute
         prefs.quoteRefreshCadenceMinutes        = draft.quoteRefreshCadenceMinutes
         prefs.biometricsEnabled                 = draft.biometricsEnabled
-        prefs.contextualHelpEnabled             = draft.contextualHelpEnabled
         prefs.priceAlertsEnabled                = draft.priceAlertsEnabled
         prefs.watchlistAlertsEnabled            = draft.watchlistAlertsEnabled
         prefs.holdingRiskAlertsEnabled          = draft.holdingRiskAlertsEnabled
