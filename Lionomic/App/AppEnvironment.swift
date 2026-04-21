@@ -49,6 +49,29 @@ final class AppEnvironment {
             notificationService: self.notificationService
         )
         self.aiService = AnthropicAIService(keychainService: keychainService)
+
+        // MAlerts2: wire the price-alert firing hook into MarketDataService.
+        // Done at the end of init — all dependencies exist by this point —
+        // and dispatched as a Task because the hook setter hops onto the
+        // MarketDataService actor asynchronously.
+        let prefsRepo = self.preferencesRepository
+        let alertRepo = self.alertRepository
+        let notifService = self.notificationService
+        let containerRef = modelContainer
+        let market = self.marketDataService
+        Task {
+            await market.setOnQuoteUpdated { symbol, previousPrice, newPrice in
+                await AlertFiringCoordinator.handleQuoteUpdate(
+                    symbol: symbol,
+                    previousPrice: previousPrice,
+                    newPrice: newPrice,
+                    modelContainer: containerRef,
+                    preferencesRepository: prefsRepo,
+                    alertRepository: alertRepo,
+                    notificationService: notifService
+                )
+            }
+        }
     }
 
     func seedOnFirstLaunch() {

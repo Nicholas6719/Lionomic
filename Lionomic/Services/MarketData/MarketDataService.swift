@@ -15,10 +15,19 @@ import SwiftData
 /// `AssetType.usesMarketQuote` before calling `fetchQuote(symbol:)`.
 actor MarketDataService {
 
+    /// MAlerts2: hook invoked after every successful `upsert(_:)`.
+    /// Receives the previous cached price (nil on first-ever fetch for a
+    /// symbol) and the new price that was just written. Caller wires this
+    /// to `AlertFiringCoordinator.handleQuoteUpdate(...)` in
+    /// `AppEnvironment`. Left nil in test wiring so legacy tests keep
+    /// running without alert side effects.
+    typealias QuoteUpdatedHook = @Sendable (_ symbol: String, _ previousPrice: Decimal?, _ newPrice: Decimal) async -> Void
+
     private let modelContainer: ModelContainer
     private let providers: [any MarketDataProvider]
     private let rateLimiter: RateLimiter
     private let context: ModelContext
+    private var onQuoteUpdated: QuoteUpdatedHook?
 
     init(
         modelContainer: ModelContainer,
@@ -29,6 +38,7 @@ actor MarketDataService {
         self.providers = providers
         self.rateLimiter = rateLimiter
         self.context = ModelContext(modelContainer)
+        self.onQuoteUpdated = nil
     }
 
     /// Convenience init for production wiring. Pulls Twelve Data as primary, Finnhub as fallback.
@@ -45,6 +55,13 @@ actor MarketDataService {
             ],
             rateLimiter: rateLimiter
         )
+    }
+
+    /// Post-init wiring for the quote-updated hook. Called from
+    /// `AppEnvironment.init` after the AlertRepository and
+    /// NotificationService are constructed.
+    func setOnQuoteUpdated(_ hook: @escaping QuoteUpdatedHook) {
+        self.onQuoteUpdated = hook
     }
 
     // MARK: - Public API
@@ -105,7 +122,9 @@ actor MarketDataService {
 
     private func upsert(_ result: QuoteResult) {
         let symbol = Self.normalize(result.symbol)
+        let previousPrice: Decimal?
         if let existing = cachedRow(for: symbol) {
+            previousPrice = existing.price
             existing.price         = result.price
             existing.change        = result.change
             existing.changePercent = result.changePercent
@@ -113,6 +132,7 @@ actor MarketDataService {
             existing.providerName  = result.providerName
             existing.fetchedAt     = result.fetchedAt
         } else {
+            previousPrice = nil
             context.insert(CachedQuote(
                 symbol:        symbol,
                 price:         result.price,
@@ -124,6 +144,13 @@ actor MarketDataService {
             ))
         }
         try? context.save()
+
+        // MAlerts2: fire-and-forget alert check. Dispatched as a Task so a
+        // slow MainActor hop never blocks the next quote fetch.
+        if let onQuoteUpdated {
+            let newPrice = result.price
+            Task { await onQuoteUpdated(symbol, previousPrice, newPrice) }
+        }
     }
 
     private static func normalize(_ symbol: String) -> String {

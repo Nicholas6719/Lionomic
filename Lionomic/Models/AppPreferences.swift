@@ -7,6 +7,10 @@ final class AppPreferences {
     var morningBriefMinute: Int
     var quoteRefreshCadenceMinutes: Int
     var biometricsEnabled: Bool
+    /// Reserved — no active call sites yet. Kept on the model so
+    /// SwiftData doesn't need a schema version bump; removed from
+    /// `DraftPreferences` and the Settings UI in MAlerts2 once the grep
+    /// confirmed nothing outside of plumbing was reading it.
     var contextualHelpEnabled: Bool
     var firstLaunchComplete: Bool
     var priceAlertsEnabled: Bool

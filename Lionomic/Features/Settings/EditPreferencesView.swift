@@ -59,31 +59,14 @@ struct EditPreferencesView: View {
             }
 
             Section {
+                Toggle("Price Movement Alerts",          isOn: $draft.priceAlertsEnabled)
+                Toggle("Watchlist Opportunity Alerts",   isOn: $draft.watchlistAlertsEnabled)
                 Toggle("Holding Risk Alerts",            isOn: $draft.holdingRiskAlertsEnabled)
                 Toggle("Recommendation Change Alerts",   isOn: $draft.recommendationChangeAlertsEnabled)
             } header: {
                 Text("Notifications")
             } footer: {
-                Text("Notifications are scheduled locally — nothing is sent to a server.")
-            }
-
-            // M11: Price Movement and Watchlist Opportunity alerts have no
-            // backing delivery logic in V1. They're split into their own
-            // section with an honest footer rather than sitting next to
-            // the wired toggles as if they all behave the same way.
-            Section {
-                Toggle("Price Movement Alerts",          isOn: $draft.priceAlertsEnabled)
-                Toggle("Watchlist Opportunity Alerts",   isOn: $draft.watchlistAlertsEnabled)
-            } header: {
-                Text("Notifications (Coming Soon)")
-            } footer: {
-                Text("Reserved for a future update. Toggling these has no effect in this release — your choice is saved and will activate when delivery lands.")
-            }
-
-            Section {
-                Toggle("Contextual Help", isOn: $draft.contextualHelpEnabled)
-            } footer: {
-                Text("Shows inline guidance during data entry.")
+                Text("Notifications are scheduled locally — nothing is sent to a server. Set per-symbol price thresholds on holdings and watchlist items.")
             }
         }
         .navigationTitle("App Preferences")
@@ -136,7 +119,6 @@ private struct EditPreferencesReviewSheet: View {
                         Text(String(format: "%02d:%02d", draft.morningBriefHour, draft.morningBriefMinute))
                     }
                     LabeledContent("Refresh every",        value: "\(draft.quoteRefreshCadenceMinutes) min")
-                    LabeledContent("Contextual Help",      value: draft.contextualHelpEnabled ? "On" : "Off")
                     LabeledContent("Price Alerts",         value: draft.priceAlertsEnabled ? "On" : "Off")
                     LabeledContent("Watchlist Alerts",     value: draft.watchlistAlertsEnabled ? "On" : "Off")
                     LabeledContent("Holding Risk Alerts",  value: draft.holdingRiskAlertsEnabled ? "On" : "Off")

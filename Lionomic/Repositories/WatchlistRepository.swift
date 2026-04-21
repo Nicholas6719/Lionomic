@@ -148,4 +148,20 @@ final class WatchlistRepository {
         modelContext.delete(item)
         try modelContext.save()
     }
+
+    // MARK: - Price alert thresholds (MAlerts2)
+
+    /// Sets (or clears, via `nil`) the above/below price alert thresholds
+    /// on a `WatchlistItem`. Persists immediately. Same rationale as the
+    /// PortfolioRepository equivalent — these are scalar edits with their
+    /// own confirm step at the sheet level.
+    func setAlertThresholds(
+        for item: WatchlistItem,
+        above: Decimal?,
+        below: Decimal?
+    ) throws {
+        item.alertAbovePrice = above
+        item.alertBelowPrice = below
+        try modelContext.save()
+    }
 }
