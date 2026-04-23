@@ -84,6 +84,16 @@ struct ChatViewModelTests {
         #expect(mock.callCount == 0)
     }
 
+    // MARK: - MContext: construction + minimal stubs
+
+    @Test("ChatViewModel can be constructed with the enriched init and send does not crash on minimal stub data")
+    func enrichedInitDoesNotCrashOnMinimalData() async throws {
+        let (vm, _) = try makeViewModel(response: .success("OK"))
+        vm.inputText = "Any question"
+        await vm.send()
+        #expect(vm.messages.count == 2)
+    }
+
     // MARK: - Helpers
 
     private func makeViewModel(
@@ -99,12 +109,15 @@ struct ChatViewModelTests {
         // is simply omitted, which is also fine.
         try watchlistRepo.seedDefaultsIfNeeded()
 
+        let marketData = MarketDataService(modelContainer: container, providers: [])
+
         let mock = MockAIService(response: response)
         let vm = ChatViewModel(
             aiService: mock,
             profileRepository: profileRepo,
             portfolioRepository: portfolioRepo,
-            watchlistRepository: watchlistRepo
+            watchlistRepository: watchlistRepo,
+            marketDataService: marketData
         )
         return (vm, mock)
     }
