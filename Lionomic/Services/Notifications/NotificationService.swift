@@ -21,14 +21,40 @@ final class NotificationService {
     /// Requests `[.alert, .sound]` the first time only. Subsequent calls
     /// with status `.denied` / `.authorized` / `.provisional` / `.ephemeral`
     /// return without prompting.
-    func requestAuthorization() async {
+    ///
+    /// MBackground: widened to return `Bool` so UI surfaces that prompt at
+    /// a user-initiated moment (PriceAlertSheet Save, preference toggles)
+    /// can surface a "notifications disabled" inline note when the user
+    /// has previously denied or just denied the prompt. `true` means the
+    /// app is currently authorized (including provisional/ephemeral).
+    /// Marked `@discardableResult` for call sites that only want the
+    /// prompt side-effect.
+    @discardableResult
+    func requestAuthorization() async -> Bool {
         let settings = await center.notificationSettings()
-        guard settings.authorizationStatus == .notDetermined else { return }
-        do {
-            _ = try await center.requestAuthorization(options: [.alert, .sound])
-        } catch {
-            Log.app.error("Notification auth request failed: \(String(describing: error), privacy: .public)")
+        switch settings.authorizationStatus {
+        case .notDetermined:
+            do {
+                return try await center.requestAuthorization(options: [.alert, .sound])
+            } catch {
+                Log.app.error("Notification auth request failed: \(String(describing: error), privacy: .public)")
+                return false
+            }
+        case .authorized, .provisional, .ephemeral:
+            return true
+        case .denied:
+            return false
+        @unknown default:
+            return false
         }
+    }
+
+    /// Read-only peek at the current authorization status. Lets UI gate
+    /// display of "notifications disabled" notes without triggering a
+    /// prompt. Returns `UNAuthorizationStatus` directly — callers usually
+    /// only care about `.denied` vs everything else.
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await center.notificationSettings().authorizationStatus
     }
 
     /// Posts an immediate local notification. `identifier` is used to

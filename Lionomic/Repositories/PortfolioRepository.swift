@@ -86,8 +86,16 @@ enum PortfolioRepositoryError: Error, Equatable {
 final class PortfolioRepository {
     private let modelContext: ModelContext
 
-    init(modelContext: ModelContext) {
+    /// MBackground: optional reference used to purge any orphaned
+    /// `AccountOverride` rows when an `Account` is deleted. Optional so
+    /// existing tests that construct `PortfolioRepository` in isolation
+    /// don't have to build a full profile stack — orphan cleanup is a
+    /// production-path concern wired from `AppEnvironment`.
+    private let profileRepository: ProfileRepository?
+
+    init(modelContext: ModelContext, profileRepository: ProfileRepository? = nil) {
         self.modelContext = modelContext
+        self.profileRepository = profileRepository
     }
 
     // MARK: - Accounts
@@ -129,8 +137,17 @@ final class PortfolioRepository {
     }
 
     func commitDelete(_ account: Account) throws {
+        // Capture the UUID before the delete, because after `delete(_:)`
+        // the model's stored properties are unsafe to read in SwiftData.
+        let accountID = account.id
         modelContext.delete(account)
         try modelContext.save()
+
+        // MBackground: purge any orphaned per-account override. No-op
+        // when the Account never had an override, and no-op (by design)
+        // when no `ProfileRepository` was injected — tests that construct
+        // `PortfolioRepository` in isolation skip this step.
+        try profileRepository?.clearOverride(for: accountID)
     }
 
     // MARK: - Holdings

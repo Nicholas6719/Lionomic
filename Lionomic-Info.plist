@@ -5,6 +5,7 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>Coppola.Lionomic.morningbrief</string>
+		<string>com.lionomic.backgroundAlerts</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// Shared sheet for editing above/below price alert thresholds.
 ///
@@ -11,8 +12,11 @@ struct PriceAlertSheet: View {
     let alertsFeatureEnabled: Bool
     @State private var aboveText: String
     @State private var belowText: String
+    @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
+    @State private var isSaving = false
     private let onSave: (_ above: Decimal?, _ below: Decimal?) -> Void
 
+    @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
 
     init(
@@ -38,6 +42,18 @@ struct PriceAlertSheet: View {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(Color(.systemOrange))
                             Text("Price alerts are turned off in Settings → App Preferences. Thresholds you save here will not fire notifications until you re-enable them.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                if NotificationAuthGate.shouldShowDeniedNote(currentStatus: notificationStatus) {
+                    Section {
+                        HStack(alignment: .top, spacing: DesignSystem.Spacing.xs) {
+                            Image(systemName: "bell.slash.fill")
+                                .foregroundStyle(Color(.systemOrange))
+                            Text("Notifications are disabled for Lionomic. Thresholds will be stored, but no alert will fire until you enable notifications in iOS Settings.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -70,12 +86,39 @@ struct PriceAlertSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        onSave(parse(aboveText), parse(belowText))
-                        dismiss()
+                        Task { await save() }
                     }
+                    .disabled(isSaving)
                 }
             }
+            .task {
+                // Peek only — we don't prompt on appear. The prompt fires
+                // the first time the user taps Save (i.e. at a clear,
+                // user-initiated moment).
+                notificationStatus = await env.notificationService.authorizationStatus()
+            }
         }
+    }
+
+    // MARK: - Save
+
+    /// Saving is unconditional — thresholds persist even when the user
+    /// denies notifications. That matches the spec: the threshold is
+    /// still valid state; only delivery is affected. When status is
+    /// `.notDetermined`, we request once at this moment; the user's
+    /// answer updates `notificationStatus` so the inline note surfaces
+    /// on a subsequent open if they tapped Don't Allow.
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+
+        if NotificationAuthGate.shouldPrompt(currentStatus: notificationStatus) {
+            _ = await env.notificationService.requestAuthorization()
+            notificationStatus = await env.notificationService.authorizationStatus()
+        }
+
+        onSave(parse(aboveText), parse(belowText))
+        dismiss()
     }
 
     private func parse(_ text: String) -> Decimal? {

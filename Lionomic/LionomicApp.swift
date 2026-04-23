@@ -15,6 +15,13 @@ struct LionomicApp: App {
             // `applicationDidFinishLaunching` returns. SwiftUI's `App.init`
             // runs before scene setup, which is early enough.
             MorningBriefBackgroundTask.register(env: env)
+            BackgroundAlertTask.register(env: env)
+
+            // Initial scheduling. Both tasks reschedule themselves at the
+            // top of their handlers, so a single seed here is enough to
+            // kick the chain off. RootView also reschedules on
+            // .background transitions as an extra safety net.
+            BackgroundAlertTask.scheduleNext()
         } catch {
             Log.app.fault("ModelContainer init failed: \(String(describing: error), privacy: .public)")
             fatalError("Could not create ModelContainer: \(error)")

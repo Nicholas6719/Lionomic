@@ -47,6 +47,12 @@ struct RootView: View {
                 // by `firstLaunchComplete` so we never schedule against
                 // an empty portfolio during onboarding.
                 scheduleMorningBriefRefreshIfAllowed()
+                // MBackground: same guard for the alert-refresh task. No
+                // portfolio → nothing worth refreshing; once onboarded,
+                // reschedule on every backgrounding so an app that sits
+                // in the background for a long time still gets a fresh
+                // pending request queued up.
+                scheduleBackgroundAlertRefreshIfAllowed()
             case .active:
                 if biometricsEnabled && env.biometricService.isLocked {
                     Task { await env.biometricService.authenticate() }
@@ -75,6 +81,16 @@ struct RootView: View {
     private func scheduleMorningBriefRefreshIfAllowed() {
         guard env.preferencesRepository.currentPreferences?.firstLaunchComplete == true else { return }
         MorningBriefBackgroundTask.scheduleNext()
+    }
+
+    /// Guarded wrapper around `BackgroundAlertTask.scheduleNext()`. Same
+    /// onboarding guard as the morning brief — the handler itself also
+    /// short-circuits when no alert toggle is on, so the scheduler staying
+    /// live during the "toggles off" state is harmless and avoids a dropped
+    /// chain if the user enables alerts later while the app is backgrounded.
+    private func scheduleBackgroundAlertRefreshIfAllowed() {
+        guard env.preferencesRepository.currentPreferences?.firstLaunchComplete == true else { return }
+        BackgroundAlertTask.scheduleNext()
     }
 }
 
