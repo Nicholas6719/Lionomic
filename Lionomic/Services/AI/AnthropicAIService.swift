@@ -10,6 +10,10 @@ import Foundation
 ///
 /// All methods are `nonisolated` so the service can be called from any
 /// actor, consistent with `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.
+///
+/// MContext: HTTP 429 and 5xx responses are retried with exponential
+/// backoff + jitter (max 3 attempts — 1 original plus 2 retries). See
+/// `withRetry` for the pure helper used by tests.
 final class AnthropicAIService: AIService {
 
     // Hardcoded string constants — the model and API version are part
@@ -18,6 +22,17 @@ final class AnthropicAIService: AIService {
     private let maxTokens: Int = 1024
     private let anthropicVersion: String = "2023-06-01"
     private let endpoint: URL = URL(string: "https://api.anthropic.com/v1/messages")!
+
+    // MARK: - Retry knobs
+
+    /// Max attempts including the original. 1 original + 2 retries.
+    static let retryMaxAttempts: Int = 3
+    /// Initial delay before the first retry. Subsequent retries multiply
+    /// this by `retryMultiplier`.
+    static let retryBaseDelay: TimeInterval = 1.0
+    static let retryMultiplier: Double = 2.0
+    /// Random 0–0.5s added to each backoff to avoid thundering-herd.
+    static let retryJitterRange: ClosedRange<Double> = 0.0...0.5
 
     private let keychainService: KeychainService?
     private let staticApiKey: String?
@@ -80,35 +95,16 @@ final class AnthropicAIService: AIService {
             throw AIServiceError.requestFailed("encode: \(error.localizedDescription)")
         }
 
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await URLSession.shared.data(for: request)
-        } catch {
-            throw AIServiceError.requestFailed("transport: \(error.localizedDescription)")
+        // MContext: wrap the actual HTTP round-trip in `withRetry` so
+        // transient 429/5xx responses auto-retry with backoff. Transport
+        // failures and non-retryable HTTP statuses fall out immediately.
+        return try await Self.withRetry(
+            maxAttempts: Self.retryMaxAttempts,
+            baseDelay: Self.retryBaseDelay,
+            multiplier: Self.retryMultiplier
+        ) {
+            await Self.performSingleAttempt(request: request)
         }
-
-        guard let http = response as? HTTPURLResponse else {
-            throw AIServiceError.requestFailed("non-HTTP response")
-        }
-        guard (200...299).contains(http.statusCode) else {
-            let bodyText = String(data: data, encoding: .utf8) ?? "(no body)"
-            throw AIServiceError.requestFailed(
-                "status \(http.statusCode): \(bodyText.prefix(200))"
-            )
-        }
-
-        let envelope: ResponseEnvelope
-        do {
-            envelope = try JSONDecoder().decode(ResponseEnvelope.self, from: data)
-        } catch {
-            throw AIServiceError.requestFailed("decode: \(error.localizedDescription)")
-        }
-
-        guard let text = envelope.content.first?.text, !text.isEmpty else {
-            throw AIServiceError.requestFailed("empty response content")
-        }
-        return text
     }
 
     nonisolated func complete(prompt: String) async throws -> String {
@@ -116,6 +112,136 @@ final class AnthropicAIService: AIService {
             system: "",
             messages: [AIMessage(role: .user, content: prompt)]
         )
+    }
+
+    // MARK: - Single attempt
+    //
+    // Extracted so `withRetry` can drive repeated calls. Returns a
+    // `RetryAttempt<String>` — the closure's own classification of
+    // success/retryable/fatal — rather than throwing.
+
+    private nonisolated static func performSingleAttempt(request: URLRequest) async -> RetryAttempt<String> {
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            // Transport-level failures (no network, TLS, etc.) are
+            // treated as fatal rather than retryable. 429/5xx are where
+            // backoff actually helps; a DNS error won't be fixed by
+            // waiting 2 seconds.
+            return .fatal(AIServiceError.requestFailed("transport: \(error.localizedDescription)"))
+        }
+
+        guard let http = response as? HTTPURLResponse else {
+            return .fatal(AIServiceError.requestFailed("non-HTTP response"))
+        }
+
+        if (200...299).contains(http.statusCode) {
+            do {
+                let envelope = try JSONDecoder().decode(ResponseEnvelope.self, from: data)
+                guard let text = envelope.content.first?.text, !text.isEmpty else {
+                    return .fatal(AIServiceError.requestFailed("empty response content"))
+                }
+                return .success(text)
+            } catch {
+                return .fatal(AIServiceError.requestFailed("decode: \(error.localizedDescription)"))
+            }
+        }
+
+        let bodyText = String(data: data, encoding: .utf8) ?? "(no body)"
+        let error = AIServiceError.requestFailed(
+            "status \(http.statusCode): \(bodyText.prefix(200))"
+        )
+        if isRetryable(statusCode: http.statusCode) {
+            return .retryable(error)
+        }
+        return .fatal(error)
+    }
+
+    // MARK: - Retry classification (pure)
+
+    /// 429 and any 5xx are retryable; everything else fails immediately.
+    /// Kept as a separate function so tests can assert classification
+    /// without driving the loop.
+    nonisolated static func isRetryable(statusCode: Int) -> Bool {
+        statusCode == 429 || (500..<600).contains(statusCode)
+    }
+
+    /// Computes the backoff delay for a given attempt index. Attempt 1
+    /// is the original call and never sleeps; attempt 2 waits
+    /// `baseDelay + jitter`; attempt 3 waits `baseDelay * multiplier + jitter`;
+    /// and so on. Pure — jitter is supplied as a value, not generated here.
+    nonisolated static func backoffDelay(
+        beforeAttempt attempt: Int,
+        baseDelay: TimeInterval,
+        multiplier: Double,
+        jitter: TimeInterval
+    ) -> TimeInterval {
+        // `attempt == 1` is the first try (no sleep). `attempt == 2` is
+        // the first retry → baseDelay. Each subsequent retry multiplies.
+        let exponent = max(0, attempt - 2)
+        return baseDelay * pow(multiplier, Double(exponent)) + jitter
+    }
+
+    // MARK: - withRetry helper (pure, testable)
+
+    /// Classification of a single attempt. The operation decides which
+    /// case it returns — the loop does not inspect error types, which
+    /// keeps the helper reusable for any retryable I/O.
+    nonisolated enum RetryAttempt<T> {
+        case success(T)
+        case retryable(Error)
+        case fatal(Error)
+    }
+
+    /// Runs `operation` up to `maxAttempts` times with exponential
+    /// backoff between retries. `.retryable` results sleep then retry
+    /// (until exhausted). `.fatal` results throw immediately. On
+    /// exhaustion, throws the last retryable error observed.
+    ///
+    /// `jitter` and `sleep` are injected so tests can eliminate
+    /// wall-clock delays and randomness entirely. Production defaults
+    /// use `Double.random(in: retryJitterRange)` and `Task.sleep`.
+    nonisolated static func withRetry<T: Sendable>(
+        maxAttempts: Int,
+        baseDelay: TimeInterval,
+        multiplier: Double = retryMultiplier,
+        jitter: @Sendable () -> TimeInterval = { Double.random(in: retryJitterRange) },
+        // Swift rejects `Self.defaultSleep` as a default argument value
+        // on a generic static method ("covariant Self cannot be
+        // referenced from a default argument expression"), so spell out
+        // the concrete type name here. Semantically identical.
+        sleep: @Sendable (TimeInterval) async -> Void = AnthropicAIService.defaultSleep,
+        operation: @Sendable () async -> RetryAttempt<T>
+    ) async throws -> T {
+        var lastError: Error = AIServiceError.requestFailed("retry loop did not execute")
+        for attempt in 1...max(1, maxAttempts) {
+            switch await operation() {
+            case .success(let value):
+                return value
+            case .retryable(let error):
+                lastError = error
+                if attempt < maxAttempts {
+                    let delay = backoffDelay(
+                        beforeAttempt: attempt + 1,
+                        baseDelay: baseDelay,
+                        multiplier: multiplier,
+                        jitter: jitter()
+                    )
+                    await sleep(delay)
+                }
+            case .fatal(let error):
+                throw error
+            }
+        }
+        throw lastError
+    }
+
+    /// Default sleep implementation — plain `Task.sleep(nanoseconds:)`.
+    /// Cooperative: a cancelled task drops through immediately.
+    nonisolated static func defaultSleep(_ seconds: TimeInterval) async {
+        try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
     }
 
     // MARK: - Wire types

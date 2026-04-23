@@ -42,7 +42,8 @@ struct TabRoot: View {
                         aiService: env.aiService,
                         profileRepository: env.profileRepository,
                         portfolioRepository: env.portfolioRepository,
-                        watchlistRepository: env.watchlistRepository
+                        watchlistRepository: env.watchlistRepository,
+                        marketDataService: env.marketDataService
                     ))
                 }
                 .tabItem { Label("Chat", systemImage: "message") }
