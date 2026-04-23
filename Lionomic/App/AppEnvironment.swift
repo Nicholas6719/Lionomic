@@ -27,7 +27,13 @@ final class AppEnvironment {
         self.modelContainer = modelContainer
         let context = modelContainer.mainContext
         self.profileRepository = ProfileRepository(modelContext: context)
-        self.portfolioRepository = PortfolioRepository(modelContext: context)
+        // MBackground: pass the profile repo so `commitDelete(_:)` can
+        // purge any orphaned AccountOverride rows when an Account goes
+        // away — fixes the MProfile follow-up flagged in v0.5-mprofile.
+        self.portfolioRepository = PortfolioRepository(
+            modelContext: context,
+            profileRepository: self.profileRepository
+        )
         self.watchlistRepository = WatchlistRepository(modelContext: context)
         self.preferencesRepository = PreferencesRepository(context: context)
         self.alertRepository = AlertRepository(modelContext: context)

@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// Settings → App Preferences editor.
 /// Covers every `AppPreferences` field except `biometricsEnabled` (owned by
@@ -13,6 +14,7 @@ struct EditPreferencesView: View {
     @State private var showingReview = false
     @State private var errorMessage: String?
     @State private var loaded = false
+    @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     // Allowed refresh cadences — matches the prompt's segmented options.
     private let cadenceOptions: [Int] = [5, 15, 30, 60]
@@ -66,7 +68,17 @@ struct EditPreferencesView: View {
             } header: {
                 Text("Notifications")
             } footer: {
-                Text("Notifications are scheduled locally — nothing is sent to a server. Set per-symbol price thresholds on holdings and watchlist items.")
+                if notificationStatus == .denied
+                    && (draft.priceAlertsEnabled || draft.watchlistAlertsEnabled
+                        || draft.holdingRiskAlertsEnabled
+                        || draft.recommendationChangeAlertsEnabled) {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                        Text("Notifications are disabled for Lionomic in iOS Settings. Alerts will be recorded but no banner will appear until you re-enable them.")
+                        Text("Preferences are still saved locally — nothing is sent to a server. Set per-symbol price thresholds on holdings and watchlist items.")
+                    }
+                } else {
+                    Text("Notifications are scheduled locally — nothing is sent to a server. Set per-symbol price thresholds on holdings and watchlist items.")
+                }
             }
         }
         .navigationTitle("App Preferences")
@@ -82,6 +94,20 @@ struct EditPreferencesView: View {
                 }
                 loaded = true
             }
+            notificationStatus = await env.notificationService.authorizationStatus()
+        }
+        // MBackground: when the user turns ON either of the newly-wired
+        // alert toggles, prompt for notification auth (once — the service
+        // only asks when status is .notDetermined) and refresh our local
+        // status so the inline denied-note updates. Turning a toggle OFF
+        // does nothing.
+        .onChange(of: draft.priceAlertsEnabled) { oldValue, newValue in
+            guard !oldValue && newValue else { return }
+            Task { await requestAuthIfNeeded() }
+        }
+        .onChange(of: draft.watchlistAlertsEnabled) { oldValue, newValue in
+            guard !oldValue && newValue else { return }
+            Task { await requestAuthIfNeeded() }
         }
         .sheet(isPresented: $showingReview) {
             EditPreferencesReviewSheet(draft: draft) {
@@ -103,6 +129,18 @@ struct EditPreferencesView: View {
         } message: {
             if let msg = errorMessage { Text(msg) }
         }
+    }
+
+    /// Request notification auth once, but only when the system status
+    /// is actually `.notDetermined` (decided by `NotificationAuthGate`).
+    /// Always refresh our local `notificationStatus` afterwards so the
+    /// inline denied-note can appear if the user tapped Don't Allow.
+    private func requestAuthIfNeeded() async {
+        let status = await env.notificationService.authorizationStatus()
+        if NotificationAuthGate.shouldPrompt(currentStatus: status) {
+            _ = await env.notificationService.requestAuthorization()
+        }
+        notificationStatus = await env.notificationService.authorizationStatus()
     }
 }
 

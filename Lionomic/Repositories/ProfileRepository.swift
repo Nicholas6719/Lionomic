@@ -123,9 +123,19 @@ final class ProfileRepository {
     }
 
     /// Removes the `AccountOverride` for `account`, if one exists.
+    /// Thin wrapper around the UUID-keyed overload so callers holding an
+    /// `Account` reference don't have to reach into `account.id` themselves.
     func clearOverride(for account: Account) throws {
+        try clearOverride(for: account.id)
+    }
+
+    /// MBackground: UUID-keyed overload used by
+    /// `PortfolioRepository.commitDelete(_:)` to purge any orphaned
+    /// override when its owning Account is deleted. Idempotent — missing
+    /// overrides are a no-op, not an error, since deletion is the only
+    /// path that calls this and the account may never have had one.
+    func clearOverride(for accountID: UUID) throws {
         guard let profile = try fetchProfile() else { return }
-        let accountID = account.id
         guard let existing = profile.accountOverrides.first(where: { $0.accountID == accountID }) else {
             return
         }
